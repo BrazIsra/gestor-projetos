@@ -1268,9 +1268,15 @@
     return !!(s && s.clearPriority);
   }
   /* Regra aplicada sempre que um projeto muda de status */
+  /* Status "Concluído" (qualquer status cujo nome comece com Conclu) */
+  function isDoneStatus(statusId) {
+    var s = byId(state.statuses, statusId);
+    return !!s && norm(s.name).indexOf('conclu') >= 0;
+  }
   function changeStatus(p, newStatus) {
     p.statusId = newStatus;
     if (clearsPriority(newStatus)) p.priorityId = noPriorityId();
+    if (isDoneStatus(newStatus)) p.progress = 100;
   }
 
   function purgeRefs() {
@@ -2611,6 +2617,7 @@
   });
   fStatus.addEventListener('change', function () {
     if (clearsPriority(fStatus.value)) fPriority.value = noPriorityId();
+    if (isDoneStatus(fStatus.value)) { $('#f-progress').value = 100; $('#f-progress-range').value = 100; }
   });
   $$('[data-close]', modalEl).forEach(function (b) { b.addEventListener('click', closeModal); });
   modalEl.addEventListener('pointerdown', function (e) { downOnBackdrop = e.target === modalEl; });
