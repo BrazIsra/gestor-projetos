@@ -441,6 +441,81 @@
   .card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; min-height: 26px; }
 
   /* ---------- Configurações ---------- */
+  /* ---------- Estatísticas ---------- */
+  #view-stats { max-width: 1400px; margin: 0 auto; }
+  .st-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .st-head h2 { margin: 0; font-size: 18px; }
+  .st-head p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow-sm); min-width: 0; }
+  .kpi-label { font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .kpi-value { font-size: 28px; font-weight: 700; line-height: 1.15; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .kpi-sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .kpi.alert { border-color: var(--danger); }
+  .kpi.alert .kpi-value { color: var(--danger); }
+  .kpi.warn { border-color: var(--warn); }
+  .kpi.warn .kpi-value { color: var(--warn); }
+  .kpi .prog { margin-top: 8px; }
+  .kpi .prog-num { display: none; }
+  .st-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; align-items: start; }
+  .st-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; box-shadow: var(--shadow-sm); min-width: 0; }
+  .st-card.wide { grid-column: 1 / -1; }
+  .st-card h3 { margin: 0; font-size: 15px; }
+  .st-card .sub { margin: 3px 0 14px; font-size: 12.5px; color: var(--muted); }
+  .bars { display: flex; flex-direction: column; gap: 4px; }
+  .bar-row {
+    display: grid; grid-template-columns: minmax(90px, 150px) 1fr 92px; align-items: center; gap: 10px;
+    padding: 5px 6px; margin: 0 -6px; border: 0; border-radius: 8px; background: transparent;
+    font: inherit; color: inherit; text-align: left; width: calc(100% + 12px);
+  }
+  button.bar-row { cursor: pointer; }
+  button.bar-row:hover { background: var(--hover); }
+  button.bar-row:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+  .bar-name { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; }
+  .bar-name span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { height: 14px; display: flex; gap: 2px; min-width: 0; }
+  .bar-fill { height: 100%; border-radius: 0 4px 4px 0; min-width: 0; }
+  .bar-fill.done { opacity: .35; }
+  .bar-val { font-size: 13px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .bar-val b { font-weight: 700; }
+  .bar-val span { color: var(--muted); margin-left: 4px; }
+  .st-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+  .st-legend i { display: inline-block; width: 12px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; background: var(--muted); }
+  .st-legend i.done { opacity: .35; }
+  .people { display: flex; flex-direction: column; }
+  .person { display: grid; grid-template-columns: minmax(170px, 1.3fr) 2fr minmax(140px, 1fr) 120px; gap: 16px; align-items: center; padding: 10px 0; border-top: 1px solid var(--border); }
+  .person.head { border-top: 0; padding-top: 0; font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .person-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .person-name b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .person-name small { display: block; color: var(--muted); font-size: 12px; }
+  .person-btn { width: 100%; border: 0; border-top: 1px solid var(--border); background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer; padding: 10px 6px; }
+  .person-btn:hover { background: var(--hover); }
+  .person-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+  .person.head { padding-left: 6px; padding-right: 6px; }
+  .person .late { color: var(--danger); font-weight: 600; font-size: 13px; }
+  .person .ok { color: var(--muted); font-size: 13px; }
+  .st-alert { margin-top: 14px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--danger); background: var(--danger-soft); font-size: 13px; }
+  .st-alert b { color: var(--danger); }
+  .st-alert ul { margin: 6px 0 0; padding-left: 18px; }
+  .st-note { margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: var(--surface-2); border: 1px dashed var(--border); font-size: 13px; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); font-size: 12.5px; cursor: pointer; }
+  .chip-btn b { font-variant-numeric: tabular-nums; }
+  .chip-btn.zero { opacity: .55; cursor: default; }
+  .xt-wrap { overflow-x: auto; }
+  .xt { border-collapse: separate; border-spacing: 3px; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .xt th { font-size: 11.5px; font-weight: 600; color: var(--muted); text-align: center; padding: 4px 6px; white-space: nowrap; }
+  .xt th:first-child { text-align: left; }
+  .xt th .dot { display: inline-block; margin-right: 5px; vertical-align: 0; }
+  .xt td { text-align: center; padding: 7px 6px; border-radius: 6px; min-width: 44px; }
+  .xt td:first-child { text-align: left; white-space: nowrap; font-weight: 600; padding-left: 0; }
+  .xt td.zero { color: var(--muted); opacity: .5; }
+  .xt td.tot, .xt th.tot { font-weight: 700; color: var(--text); }
+  .months { display: flex; align-items: flex-end; gap: 10px; height: 150px; padding-top: 18px; }
+  .month { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; height: 100%; justify-content: flex-end; }
+  .month-bar { width: 100%; max-width: 46px; background: var(--primary); border-radius: 4px 4px 0 0; min-height: 2px; position: relative; }
+  .month-bar span { position: absolute; top: -18px; left: 0; right: 0; text-align: center; font-size: 12px; font-weight: 600; }
+  .month small { font-size: 11.5px; color: var(--muted); text-transform: capitalize; }
   .settings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; align-items: start; }
   .panel {
     background: var(--surface);
@@ -615,6 +690,11 @@
     .col { scroll-snap-align: start; }
 
     .settings-grid { grid-template-columns: 1fr; }
+    .st-grid { grid-template-columns: 1fr; }
+    .bar-row { grid-template-columns: minmax(80px, 110px) 1fr 78px; }
+    .person { grid-template-columns: 1fr 70px 70px; }
+    .person .person-bar { display: none; }
+    .kpi-value { font-size: 24px; }
     .item { flex-wrap: wrap; }
     .item .item-role { flex-basis: 100%; order: 5; }
     .backdrop { padding: 12px; }
@@ -640,6 +720,7 @@
   <nav class="tabs" role="tablist">
     <button class="tab" role="tab" data-tab="projects">Projetos</button>
     <button class="tab" role="tab" data-tab="board">Board</button>
+    <button class="tab" role="tab" data-tab="stats">Estatísticas</button>
     <button class="tab" role="tab" data-tab="settings">Configurações</button>
   </nav>
   <div class="actions">
@@ -664,6 +745,10 @@
 
   <section id="view-board" class="view" hidden>
     <div class="board" id="board"></div>
+  </section>
+
+  <section id="view-stats" class="view" hidden>
+    <div id="stats"></div>
   </section>
 
   <section id="view-settings" class="view" hidden>
@@ -913,7 +998,9 @@
         priorityId: p.priorityId || '', deadline: String(p.deadline || ''), location: String(p.location || ''),
         responsibles: Array.isArray(p.responsibles) ? p.responsibles.slice() : [],
         notes: String(p.notes || ''),
-        progress: normProgress(p.progress, p.statusId, out.statuses)
+        progress: normProgress(p.progress, p.statusId, out.statuses),
+        createdAt: /^\d{4}-\d{2}-\d{2}$/.test(p.createdAt || '') ? p.createdAt : '',
+        completedAt: /^\d{4}-\d{2}-\d{2}$/.test(p.completedAt || '') ? p.completedAt : ''
       };
     });
     var f = emptyFilters();
@@ -931,7 +1018,8 @@
     var srcCol = (d.collapsed && typeof d.collapsed === 'object') ? d.collapsed : {};
     Object.keys(srcCol).forEach(function (k) { if (srcCol[k]) col[k] = true; });
     out.collapsed = col;
-    if (['projects', 'board', 'settings'].indexOf(out.tab) < 0) out.tab = 'projects';
+    if (['projects', 'board', 'stats', 'settings'].indexOf(out.tab) < 0) out.tab = 'projects';
+    out.statsScope = out.statsScope === 'all' ? 'all' : 'open';
     if (typeof out.title !== 'string' || !out.title.trim()) out.title = DEFAULT_TITLE;
     if (out.theme !== 'dark' && out.theme !== 'light') out.theme = null;
     return out;
@@ -945,7 +1033,7 @@
 
   /* Dados que vão para o GitHub (iguais em todo aparelho) e preferências deste aparelho */
   var SHARED_KEYS = ['version', 'title', 'priorities', 'statuses', 'types', 'collaborators', 'projects', 'sort', 'collapsed'];
-  var LOCAL_KEYS = ['theme', 'tab', 'filters'];
+  var LOCAL_KEYS = ['theme', 'tab', 'filters', 'statsScope'];
   var CACHE_KEY = 'gestorProjetos.cache.v1';
   var PREFS_KEY = 'gestorProjetos.prefs.v1';
   var GH_KEY = 'gestorProjetos.github.v1';
@@ -1276,7 +1364,8 @@
   function changeStatus(p, newStatus) {
     p.statusId = newStatus;
     if (clearsPriority(newStatus)) p.priorityId = noPriorityId();
-    if (isDoneStatus(newStatus)) p.progress = 100;
+    if (isDoneStatus(newStatus)) { p.progress = 100; if (!p.completedAt) p.completedAt = isoOffset(0); }
+    else p.completedAt = '';
   }
 
   function purgeRefs() {
@@ -2594,10 +2683,14 @@
       progress: Math.max(0, Math.min(100, Math.round(Number($('#f-progress').value) || 0)))
     };
     var p = editingId ? byId(state.projects, editingId) : null;
+    var nowDone = isDoneStatus(data.statusId);
     if (p) {
+      data.completedAt = nowDone ? (p.completedAt || isoOffset(0)) : '';
       Object.assign(p, data);
       toast('Projeto atualizado.');
     } else {
+      data.createdAt = isoOffset(0);
+      data.completedAt = nowDone ? isoOffset(0) : '';
       data.id = uid();
       state.projects.unshift(data);
       toast('Projeto criado.');
@@ -2711,12 +2804,232 @@
   }
 
   /* =========================================================
+     Estatísticas
+     ========================================================= */
+  var statsEl = $('#stats');
+  var MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+  function daysUntil(iso) {
+    if (!iso) return null;
+    var p = iso.split('-').map(Number);
+    var d = new Date(p[0], p[1] - 1, p[2]);
+    var t = new Date(); t.setHours(0, 0, 0, 0);
+    return Math.round((d - t) / 86400000);
+  }
+  function pctOf(n, total) { return total ? Math.round(n / total * 100) : 0; }
+  function avgProgress(list) {
+    if (!list.length) return 0;
+    return Math.round(list.reduce(function (a, p) { return a + (Number(p.progress) || 0); }, 0) / list.length);
+  }
+
+  /* Barra horizontal: abertos (cor cheia) + concluídos (cor clara) quando o escopo é "Todos" */
+  function barRow(opt) {
+    var w = opt.max ? opt.count / opt.max * 100 : 0;
+    var wDone = opt.max ? (opt.done || 0) / opt.max * 100 : 0;
+    var wOpen = w - wDone;
+    var tip = opt.name + ': ' + opt.count + ' projeto(s)' + (opt.done ? ' (' + (opt.count - opt.done) + ' abertos, ' + opt.done + ' concluídos)' : '');
+    var inner = '<span class="bar-name"><span class="dot" style="background:' + esc(opt.color) + '"></span><span>' + esc(opt.name) + '</span></span>' +
+      '<span class="bar-track">' +
+      (wOpen > 0 ? '<span class="bar-fill" style="width:' + wOpen + '%;background:' + esc(opt.color) + '"></span>' : '') +
+      (wDone > 0 ? '<span class="bar-fill done" style="width:' + wDone + '%;background:' + esc(opt.color) + '"></span>' : '') +
+      '</span>' +
+      '<span class="bar-val"><b>' + opt.count + '</b><span>' + opt.pct + '%</span></span>';
+    if (opt.filter) {
+      return '<button type="button" class="bar-row" data-goto="' + opt.filter + '" data-id="' + esc(opt.id) + '" title="' + esc(tip) + '. Clique para ver na aba Projetos">' + inner + '</button>';
+    }
+    return '<div class="bar-row" title="' + esc(tip) + '">' + inner + '</div>';
+  }
+
+  function breakdown(list, items, field, filterKey, showDone) {
+    var rows = items.map(function (it) {
+      var ps = list.filter(function (p) { return p[field] === it.id; });
+      return { id: it.id, name: it.name, color: it.color, count: ps.length, done: showDone ? ps.filter(function (p) { return isDoneStatus(p.statusId); }).length : 0 };
+    });
+    var orphans = list.filter(function (p) { return !byId(items, p[field]); });
+    if (orphans.length) rows.push({ id: '', name: 'Sem ' + (field === 'typeId' ? 'tipo' : field === 'statusId' ? 'status' : 'prioridade'), color: '#8b95a7', count: orphans.length, done: showDone ? orphans.filter(function (p) { return isDoneStatus(p.statusId); }).length : 0, noFilter: true });
+    var max = Math.max.apply(null, rows.map(function (r) { return r.count; }).concat([1]));
+    return rows.map(function (r) {
+      return barRow({ id: r.id, name: r.name, color: r.color, count: r.count, done: r.done, max: max, pct: pctOf(r.count, list.length), filter: r.noFilter ? '' : filterKey });
+    }).join('');
+  }
+
+  function crossTable(rowsDef, cols, list, match) {
+    var colTot = cols.map(function () { return 0; });
+    var maxCell = 1;
+    var body = rowsDef.map(function (r) {
+      var cells = cols.map(function (c, i) {
+        var n = list.filter(function (p) { return match(p, r, c); }).length;
+        colTot[i] += n;
+        if (n > maxCell) maxCell = n;
+        return n;
+      });
+      return { r: r, cells: cells, tot: cells.reduce(function (a, b) { return a + b; }, 0) };
+    });
+    var head = '<tr><th></th>' + cols.map(function (c) {
+      return '<th title="' + esc(c.name) + '"><span class="dot" style="background:' + esc(c.color) + '"></span>' + esc(c.name) + '</th>';
+    }).join('') + '<th class="tot">Total</th></tr>';
+    var rowsHtml = body.map(function (b) {
+      return '<tr><td>' + esc(b.r.name) + '</td>' + b.cells.map(function (n, i) {
+        if (!n) return '<td class="zero">0</td>';
+        var a = 0.12 + 0.55 * (n / maxCell);
+        return '<td style="background:color-mix(in srgb, ' + esc(cols[i].color) + ' ' + Math.round(a * 100) + '%, transparent)" title="' + esc(b.r.name + ' · ' + cols[i].name + ': ' + n) + '">' + n + '</td>';
+      }).join('') + '<td class="tot">' + b.tot + '</td></tr>';
+    }).join('');
+    return '<div class="xt-wrap"><table class="xt">' + head + rowsHtml + '</table></div>';
+  }
+
+  function renderStats() {
+    var scope = state.statsScope === 'all' ? 'all' : 'open';
+    var all = state.projects;
+    var openAll = all.filter(function (p) { return !isDoneStatus(p.statusId); });
+    var list = scope === 'all' ? all : openAll;
+    var showDone = scope === 'all';
+    var doneCount = all.length - openAll.length;
+
+    var late = openAll.filter(function (p) { var d = daysUntil(p.deadline); return d !== null && d < 0; });
+    var soon = openAll.filter(function (p) { var d = daysUntil(p.deadline); return d !== null && d >= 0 && d <= 7; });
+    var noResp = list.filter(function (p) { return !p.responsibles.length; }).length;
+    var noDeadline = list.filter(function (p) { return !p.deadline; }).length;
+    var noPrio = list.filter(function (p) { var pr = byId(state.priorities, p.priorityId); return !pr || norm(pr.name) === 'sem prioridade'; }).length;
+    var avg = avgProgress(list);
+
+    var html = '<div class="st-head"><div><h2>Estatísticas</h2><p>' +
+      (scope === 'all' ? 'Todos os ' + all.length + ' projetos, incluindo os concluídos.' : 'Só os ' + openAll.length + ' projetos abertos (sem os concluídos).') +
+      '</p></div>' +
+      '<div class="seg" style="width:260px"><button type="button" data-scope="open" class="' + (scope === 'open' ? 'on' : '') + '">Só abertos</button>' +
+      '<button type="button" data-scope="all" class="' + (scope === 'all' ? 'on' : '') + '">Todos</button></div></div>';
+
+    // Resumo
+    html += '<div class="kpis">' +
+      '<div class="kpi"><div class="kpi-label">Projetos</div><div class="kpi-value">' + list.length + '</div><div class="kpi-sub">' + openAll.length + ' abertos · ' + doneCount + ' concluídos</div></div>' +
+      '<div class="kpi"><div class="kpi-label">Andamento médio</div><div class="kpi-value">' + avg + '%</div>' + progHTML(avg) + '</div>' +
+      '<div class="kpi' + (late.length ? ' alert' : '') + '"><div class="kpi-label">Atrasados</div><div class="kpi-value">' + late.length + '</div><div class="kpi-sub">projetos abertos com prazo vencido</div></div>' +
+      '<div class="kpi' + (soon.length ? ' warn' : '') + '"><div class="kpi-label">Vencem em 7 dias</div><div class="kpi-value">' + soon.length + '</div><div class="kpi-sub">projetos abertos</div></div>' +
+      '</div>';
+
+    if (!list.length) {
+      statsEl.innerHTML = html + '<div class="empty"><strong>Nenhum projeto aqui</strong>' +
+        (scope === 'open' ? 'Todos os projetos estão concluídos. Clique em "Todos" para ver o histórico.' : 'Crie projetos para ver as estatísticas.') + '</div>';
+      return;
+    }
+
+    html += '<div class="st-grid">';
+
+    // Pendências de cadastro
+    html += '<div class="st-card wide"><h3>Informações faltando</h3><p class="sub">Projetos sem algum dado importante. Ajuda a manter o cadastro completo.</p><div class="chips">' +
+      '<span class="chip-btn' + (noResp ? '' : ' zero') + '">Sem responsável <b>' + noResp + '</b></span>' +
+      '<span class="chip-btn' + (noDeadline ? '' : ' zero') + '">Sem prazo <b>' + noDeadline + '</b></span>' +
+      '<span class="chip-btn' + (noPrio ? '' : ' zero') + '">Sem prioridade <b>' + noPrio + '</b></span>' +
+      '</div></div>';
+
+    // Por status
+    var statusItems = scope === 'open' ? state.statuses.filter(function (s) { return !isDoneStatus(s.id); }) : state.statuses;
+    html += '<div class="st-card"><h3>Por status</h3><p class="sub">Em que etapa os projetos estão, na ordem das suas caixas.</p><div class="bars">' +
+      breakdown(list, statusItems, 'statusId', 'status', false) + '</div></div>';
+
+    // Por tipo
+    html += '<div class="st-card"><h3>Por tipo</h3><p class="sub">Quantidade e porcentagem de cada tipo de projeto.</p><div class="bars">' +
+      breakdown(list, state.types, 'typeId', 'type', showDone) + '</div>' +
+      (showDone ? '<div class="st-legend"><span><i></i>Abertos</span><span><i class="done"></i>Concluídos</span></div>' : '') + '</div>';
+
+    // Por prioridade
+    var top = state.priorities[0];
+    var parked = top ? openAll.filter(function (p) {
+      if (p.priorityId !== top.id) return false;
+      var st = byId(state.statuses, p.statusId);
+      if (!st) return true;
+      var n = norm(st.name);
+      return n.indexOf('nao inicia') >= 0 || n.indexOf('espera') >= 0;
+    }) : [];
+    html += '<div class="st-card"><h3>Por prioridade</h3><p class="sub">Distribuição das prioridades' + (scope === 'open' ? ' nos projetos abertos' : '') + '.</p><div class="bars">' +
+      breakdown(list, state.priorities, 'priorityId', 'priority', showDone) + '</div>' +
+      (showDone ? '<div class="st-legend"><span><i></i>Abertos</span><span><i class="done"></i>Concluídos</span></div>' : '') +
+      (parked.length ? '<div class="st-alert"><b>' + parked.length + ' projeto(s) com prioridade ' + esc(top.name) + ' parado(s)</b> (Não iniciado ou Em espera):<ul>' +
+        parked.map(function (p) { return '<li>' + esc(p.name) + '</li>'; }).join('') + '</ul></div>' : '') +
+      '</div>';
+
+    // Por responsável
+    var people = state.collaborators.map(function (c) {
+      var mine = list.filter(function (p) { return p.responsibles.indexOf(c.id) >= 0; });
+      var mineOpen = mine.filter(function (p) { return !isDoneStatus(p.statusId); });
+      var lateN = mineOpen.filter(function (p) { var d = daysUntil(p.deadline); return d !== null && d < 0; }).length;
+      return { c: c, total: mine.length, open: mineOpen.length, avg: avgProgress(mine), late: lateN };
+    });
+    var unassigned = list.filter(function (p) { return !p.responsibles.length; }).length;
+    var maxP = Math.max.apply(null, people.map(function (x) { return x.total; }).concat([1]));
+    html += '<div class="st-card wide"><h3>Por responsável</h3><p class="sub">Carga de trabalho de cada pessoa. Projeto com duas pessoas conta para as duas.</p><div class="people">' +
+      '<div class="person head"><span>Pessoa</span><span class="person-bar">Projetos</span><span>Andamento</span><span>Atrasados</span></div>' +
+      people.map(function (x) {
+        return '<button type="button" class="person person-btn" data-goto="resp" data-id="' + esc(x.c.id) + '" title="Clique para ver os projetos de ' + esc(x.c.name) + '">' +
+          '<span class="person-name"><span class="avatar" style="background:' + esc(x.c.color) + '">' + esc(initials(x.c.name)) + '</span><span style="min-width:0"><b>' + esc(x.c.name) + '</b><small>' + x.total + ' projeto(s)' + (showDone ? ' · ' + x.open + ' abertos' : '') + '</small></span></span>' +
+          '<span class="bar-track person-bar"><span class="bar-fill" style="width:' + (x.total / maxP * 100) + '%;background:' + esc(x.c.color) + '"></span></span>' +
+          '<span>' + (x.total ? progHTML(x.avg) : '<span class="ok">-</span>') + '</span>' +
+          '<span class="' + (x.late ? 'late' : 'ok') + '">' + (x.late ? x.late + ' atrasado(s)' : 'nenhum') + '</span>' +
+          '</button>';
+      }).join('') + '</div>' +
+      (unassigned ? '<div class="st-note">' + unassigned + ' projeto(s) sem responsável.</div>' : '') + '</div>';
+
+    // Cruzamentos
+    var stCols = statusItems.map(function (x) { return x; });
+    var respRows = state.collaborators.map(function (c) { return { id: c.id, name: c.name }; });
+    html += '<div class="st-card wide"><h3>Responsável × Status</h3><p class="sub">Quantos projetos cada pessoa tem em cada etapa. Quanto mais forte a cor, mais projetos.</p>' +
+      crossTable(respRows, stCols, list, function (p, r, c) { return p.responsibles.indexOf(r.id) >= 0 && p.statusId === c.id; }) + '</div>';
+    html += '<div class="st-card wide"><h3>Tipo × Status</h3><p class="sub">Quantos projetos de cada tipo estão em cada etapa.</p>' +
+      crossTable(state.types.map(function (t) { return { id: t.id, name: t.name }; }), stCols, list, function (p, r, c) { return p.typeId === r.id && p.statusId === c.id; }) + '</div>';
+
+    // Concluídos por mês (datas registradas a partir desta versão)
+    var withDate = all.filter(function (p) { return p.completedAt; });
+    var monthsHtml = '';
+    if (withDate.length) {
+      var now = new Date();
+      var ms = [];
+      for (var i = 5; i >= 0; i--) {
+        var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        var key = d.getFullYear() + '-' + pad(d.getMonth() + 1);
+        ms.push({ key: key, label: MONTHS[d.getMonth()], n: withDate.filter(function (p) { return p.completedAt.slice(0, 7) === key; }).length });
+      }
+      var maxM = Math.max.apply(null, ms.map(function (m) { return m.n; }).concat([1]));
+      monthsHtml = '<div class="months">' + ms.map(function (m) {
+        return '<div class="month" title="' + m.n + ' concluído(s) em ' + m.label + '"><div class="month-bar" style="height:' + (m.n / maxM * 100) + '%">' + (m.n ? '<span>' + m.n + '</span>' : '') + '</div><small>' + m.label + '</small></div>';
+      }).join('') + '</div>';
+    }
+    html += '<div class="st-card wide"><h3>Concluídos por mês</h3><p class="sub">Últimos 6 meses.</p>' +
+      (monthsHtml || '<div class="st-note">A partir de agora o app registra a data em que cada projeto é concluído. O gráfico aparece aqui assim que o primeiro projeto for concluído. Os projetos que já estavam concluídos não têm essa data.</div>') + '</div>';
+
+    html += '</div>';
+    statsEl.innerHTML = html;
+  }
+
+  statsEl.addEventListener('click', function (e) {
+    var sc = e.target.closest('[data-scope]');
+    if (sc) { state.statsScope = sc.dataset.scope; save(); renderStats(); return; }
+    var g = e.target.closest('[data-goto]');
+    if (!g) return;
+    var kind = g.dataset.goto, id = g.dataset.id;
+    state.filters = emptyFilters();
+    ui.search = ''; searchEl.value = '';
+    if (kind === 'resp') {
+      var c = byId(state.collaborators, id);
+      ui.search = c ? c.name : ''; searchEl.value = ui.search;
+    } else {
+      state.filters[kind] = { mode: 'include', selected: [id] };
+    }
+    if (state.statsScope === 'open' && kind !== 'status') {
+      state.filters.status = { mode: 'exclude', selected: state.statuses.filter(function (s) { return isDoneStatus(s.id); }).map(function (s) { return s.id; }) };
+    }
+    state.tab = 'projects';
+    save(); showTab(); refreshData();
+    window.scrollTo(0, 0);
+  });
+
+  /* =========================================================
      Renderização geral
      ========================================================= */
   function refreshData() {
     renderFilters();
     renderTable();
     renderBoard();
+    renderStats();
   }
   function renderAll() {
     appTitle.textContent = state.title;
