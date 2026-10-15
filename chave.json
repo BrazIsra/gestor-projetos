@@ -1,0 +1,12 @@
+{
+  "owner": "brazisra",
+  "repo": "gestor-dados",
+  "lock": {
+    "v": 1,
+    "kdf": "PBKDF2-SHA256",
+    "iter": 310000,
+    "salt": "nvCWa+Q7aSfEfY9DRuI1Pg==",
+    "iv": "f/06AC70Bo3J1T13",
+    "data": "TZQ0oIiL0cNl7Sm5dBCCqgPTswrqhkJX7GTTuSO4NiXUMt5TpTTagbJN0NtydH2Cv707r8jkoDfaE4VbnbcInGHWtSEVzp4FQG88lu5L8XSY0qFDQKvD1JsB1KALLu8w0gckuY8vqS4cIdKI0w=="
+  }
+}
