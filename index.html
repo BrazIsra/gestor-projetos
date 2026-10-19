@@ -74,7 +74,7 @@
   .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
   .logo { height: 40px; flex: none; display: flex; align-items: center; }
   .logo img { height: 100%; width: auto; display: block; }
-  [data-theme="dark"] .logo { background: #fff; border-radius: 8px; padding: 4px 8px; }
+  [data-theme="dark"] .logo img { filter: brightness(0) invert(1); }
   #appTitle {
     margin: 0; padding: 4px 8px;
     font-size: 17px; font-weight: 700;
@@ -194,6 +194,21 @@
     width: 270px; padding: 12px;
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
     box-shadow: var(--shadow-lg);
+  }
+  .filter-panel.fp-wide { width: min(720px, calc(100vw - 32px)); padding: 0; }
+  .fp-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .fp-head strong { font-size: 14px; }
+  .fp-cols { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .filter-sec { padding: 12px 14px; min-width: 0; }
+  .filter-sec + .filter-sec { border-left: 1px solid var(--border); }
+  .fs-title { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .fs-title .badge { text-transform: none; letter-spacing: 0; }
+  .fs-links { display: flex; gap: 10px; margin-top: 8px; }
+  .fs-links button { border: 0; background: none; padding: 0; font: inherit; font-size: 12px; font-weight: 600; color: var(--primary); cursor: pointer; }
+  .fs-links button.danger { color: var(--danger); margin-left: auto; }
+  @media (max-width: 760px) {
+    .fp-cols { grid-template-columns: 1fr; max-height: 60vh; overflow-y: auto; }
+    .filter-sec + .filter-sec { border-left: 0; border-top: 1px solid var(--border); }
   }
   .seg {
     display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 3px;
@@ -1584,33 +1599,34 @@
   }
 
   function renderFilters() {
-    var html = FILTERS.map(function (def) {
+    var total = 0, open = !!ui.openFilter;
+    var secs = FILTERS.map(function (def) {
       var f = state.filters[def.key];
       var n = f.selected.length;
-      var open = ui.openFilter === def.key;
+      if (n) total++;
       var badge = n ? '<span class="badge' + (f.mode === 'exclude' ? ' excl' : '') + '">' + (f.mode === 'exclude' ? 'exceto ' : '') + n + '</span>' : '';
-      var panel = '';
-      if (open) {
-        var opts = state[def.list].map(function (it) {
-          var count = state.projects.filter(function (p) { return p[def.field] === it.id; }).length;
-          return '<label class="opt"><input type="checkbox" data-f="check" value="' + esc(it.id) + '"' + (f.selected.indexOf(it.id) >= 0 ? ' checked' : '') + '>' +
-            '<span class="dot" style="background:' + esc(it.color) + '"></span><span class="opt-name">' + esc(it.name) + '</span><span class="opt-count">' + count + '</span></label>';
-        }).join('') || '<div class="multi-empty">Nenhum item cadastrado.</div>';
-        panel = '<div class="filter-panel mode-' + f.mode + '">' +
-          '<div class="seg"><button type="button" data-f="mode" data-mode="include" class="' + (f.mode === 'include' ? 'on' : '') + '">Incluir</button>' +
-          '<button type="button" data-f="mode" data-mode="exclude" class="' + (f.mode === 'exclude' ? 'on' : '') + '">Excluir</button></div>' +
-          '<p class="hint">' + (f.mode === 'include' ? 'Mostra só os itens marcados.' : 'Mostra tudo, exceto os itens marcados.') + '</p>' +
-          '<div class="opts">' + opts + '</div>' +
-          '<div class="panel-actions"><button type="button" class="btn" data-f="all">Todos</button>' +
-          '<button type="button" class="btn" data-f="none">Nenhum</button>' +
-          '<button type="button" class="btn btn-danger" data-f="clear">Limpar filtro</button></div>' +
-          '</div>';
-      }
-      return '<div class="filter" data-key="' + def.key + '">' +
-        '<button type="button" class="filter-btn' + (n ? ' active' : '') + '" data-f="toggle" aria-expanded="' + open + '">' +
-        ICON.filter + '<span>' + def.label + '</span>' + badge + '<span class="caret">▾</span></button>' + panel + '</div>';
+      var opts = state[def.list].map(function (it) {
+        var count = state.projects.filter(function (p) { return p[def.field] === it.id; }).length;
+        return '<label class="opt"><input type="checkbox" data-f="check" value="' + esc(it.id) + '"' + (f.selected.indexOf(it.id) >= 0 ? ' checked' : '') + '>' +
+          '<span class="dot" style="background:' + esc(it.color) + '"></span><span class="opt-name">' + esc(it.name) + '</span><span class="opt-count">' + count + '</span></label>';
+      }).join('') || '<div class="multi-empty">Nenhum item cadastrado.</div>';
+      return '<div class="filter-sec mode-' + f.mode + '" data-key="' + def.key + '">' +
+        '<div class="fs-title"><span>' + def.label + '</span>' + badge + '</div>' +
+        '<div class="seg"><button type="button" data-f="mode" data-mode="include" class="' + (f.mode === 'include' ? 'on' : '') + '">Incluir</button>' +
+        '<button type="button" data-f="mode" data-mode="exclude" class="' + (f.mode === 'exclude' ? 'on' : '') + '">Excluir</button></div>' +
+        '<p class="hint">' + (f.mode === 'include' ? 'Mostra só os marcados.' : 'Mostra tudo, exceto os marcados.') + '</p>' +
+        '<div class="opts">' + opts + '</div>' +
+        '<div class="fs-links"><button type="button" data-f="all">Todos</button><button type="button" data-f="none">Nenhum</button>' +
+        (n ? '<button type="button" class="danger" data-f="clear">Limpar</button>' : '') + '</div>' +
+        '</div>';
     }).join('');
-    if (anyFilterActive()) html += '<button type="button" class="btn btn-danger sm" data-f="clear-all">Limpar filtros</button>';
+    var panel = open ? '<div class="filter-panel fp-wide"><div class="fp-head"><strong>Filtros</strong>' +
+      (total ? '<button type="button" class="btn btn-danger sm" data-f="clear-all">Limpar todos</button>' : '') + '</div>' +
+      '<div class="fp-cols">' + secs + '</div></div>' : '';
+    var html = '<div class="filter">' +
+      '<button type="button" class="filter-btn' + (total ? ' active' : '') + '" data-f="toggle" aria-expanded="' + open + '">' +
+      ICON.filter + '<span>Filtros</span>' + (total ? '<span class="badge">' + total + '</span>' : '') + '<span class="caret">▾</span></button>' + panel + '</div>';
+    if (total) html += '<button type="button" class="btn btn-danger sm" data-f="clear-all">Limpar filtros</button>';
     filtersEl.innerHTML = html;
   }
 
@@ -1619,13 +1635,13 @@
   filtersEl.addEventListener('click', function (e) {
     var b = e.target.closest('[data-f]');
     if (!b) return;
-    var wrap = b.closest('.filter');
+    var wrap = b.closest('.filter-sec');
     var key = wrap ? wrap.dataset.key : null;
     var f = key ? state.filters[key] : null;
     var def = key ? FILTERS.filter(function (d) { return d.key === key; })[0] : null;
     switch (b.dataset.f) {
       case 'toggle':
-        ui.openFilter = ui.openFilter === key ? null : key;
+        ui.openFilter = ui.openFilter ? null : 'all';
         renderFilters();
         break;
       case 'mode':
@@ -1641,7 +1657,7 @@
         commitFilters();
         break;
       case 'clear':
-        f.selected = []; f.mode = 'include'; ui.openFilter = null;
+        f.selected = []; f.mode = 'include';
         commitFilters();
         break;
       case 'clear-all':
@@ -1653,7 +1669,7 @@
   filtersEl.addEventListener('change', function (e) {
     var input = e.target;
     if (!input.matches('input[data-f="check"]')) return;
-    var key = input.closest('.filter').dataset.key;
+    var key = input.closest('.filter-sec').dataset.key;
     var sel = state.filters[key].selected;
     var i = sel.indexOf(input.value);
     if (input.checked && i < 0) sel.push(input.value);
