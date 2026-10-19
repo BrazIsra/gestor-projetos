@@ -354,6 +354,14 @@
   .prog.full .prog-fill { background: #22a06b; }
   .prog-num { font-size: 12.5px; font-weight: 600; min-width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
   .cell.c-prog { cursor: pointer; }
+  .cell.c-prio { cursor: pointer; }
+  .cell.c-prio:hover .pill { filter: brightness(1.08); box-shadow: 0 0 0 2px var(--primary-soft); }
+  .cell.c-prio:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+  .prio-pop { position: fixed; z-index: 300; width: 220px; padding: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-lg); }
+  .prio-opt { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+  .prio-opt:hover, .prio-opt:focus-visible { background: var(--hover); outline: none; }
+  .prio-opt.on { font-weight: 700; }
+  .prio-opt .check { margin-left: auto; color: var(--primary); }
   .cell.c-prog:hover .prog-track { border-color: var(--primary); }
   .cell.c-prog:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
   .card-prog { margin-top: 10px; }
@@ -860,6 +868,7 @@
 
 <div id="colorPop" class="color-pop" hidden></div>
 <div id="progPop" class="prog-pop" hidden></div>
+<div id="prioPop" class="prio-pop" hidden role="listbox"></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <input type="file" id="importFile" accept="application/json,.json" hidden>
 
@@ -1714,7 +1723,7 @@
     return '<div class="row" data-id="' + esc(p.id) + '" tabindex="0" style="--row-color:' + esc(color) + '">' +
       '<div class="cell handle" title="Arraste para mover">' + ICON.grip + '</div>' +
       '<div class="cell c-name"><div class="p-name">' + esc(p.name) + '</div>' + (sub ? '<div class="p-desc">' + esc(sub) + '</div>' : '') + '</div>' +
-      '<div class="cell fill" data-label="Prioridade">' + pill(pr, 'Sem prioridade') + '</div>' +
+      '<div class="cell fill c-prio" data-label="Prioridade" tabindex="0" role="button" title="Clique para mudar a prioridade">' + pill(pr, 'Sem prioridade') + '</div>' +
       '<div class="cell" data-label="Prazo">' + dueHTML(p) + '</div>' +
       '<div class="cell c-prog" data-label="Andamento" tabindex="0" role="button" title="Clique para mudar o andamento">' + progHTML(p.progress) + '</div>' +
       '<div class="cell c-resp" data-label="Responsável"><span class="resp-wrap">' + avatarsHTML(p.responsibles, true) + '</span></div>' +
@@ -1770,6 +1779,12 @@
   }
 
   tbody.addEventListener('click', function (e) {
+    var pq = e.target.closest('.c-prio');
+    if (pq) {
+      if (prioCtx && prioCtx.anchor === pq) closePrioPop();
+      else openPrioPop(pq, pq.closest('.row').dataset.id);
+      return;
+    }
     var pc = e.target.closest('.c-prog');
     if (pc) {
       if (progCtx && progCtx.anchor === pc) closeProgPop();
@@ -1805,6 +1820,12 @@
     }
   });
   tbody.addEventListener('keydown', function (e) {
+    var pq = e.target.closest('.c-prio');
+    if (pq && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      openPrioPop(pq, pq.closest('.row').dataset.id);
+      return;
+    }
     var pc = e.target.closest('.c-prog');
     if (pc && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
@@ -1834,7 +1855,7 @@
   tbody.addEventListener('pointerdown', function (e) {
     var row = e.target.closest('.row');
     if (!row || e.button !== 0) return;
-    if (e.target.closest('.c-prog')) return;
+    if (e.target.closest('.c-prog') || e.target.closest('.c-prio')) return;
     var onHandle = !!e.target.closest('.handle');
     rowDrag = {
       row: row, id: row.dataset.id, pointerId: e.pointerId,
@@ -2591,6 +2612,57 @@
   progPop.addEventListener('keydown', function (e) { if (e.key === 'Enter') closeProgPop(); });
   window.addEventListener('resize', closeProgPop);
 
+  /* ---------- Mudar a prioridade direto na linha ---------- */
+  var prioPop = $('#prioPop');
+  var prioCtx = null;
+  function openPrioPop(anchor, id) {
+    var p = byId(state.projects, id);
+    if (!p) return;
+    closePop(); closeProgPop();
+    prioCtx = { anchor: anchor, id: id };
+    var hasNone = state.priorities.some(function (x) { return norm(x.name) === 'sem prioridade'; });
+    var opts = state.priorities.map(function (x) {
+      var on = p.priorityId === x.id;
+      return '<button type="button" class="prio-opt' + (on ? ' on' : '') + '" data-prio="' + esc(x.id) + '" role="option" aria-selected="' + on + '">' +
+        '<span class="dot" style="background:' + esc(x.color) + '"></span><span>' + esc(x.name) + '</span>' + (on ? '<span class="check">✓</span>' : '') + '</button>';
+    });
+    if (!hasNone) {
+      var none = !byId(state.priorities, p.priorityId);
+      opts.push('<button type="button" class="prio-opt' + (none ? ' on' : '') + '" data-prio="" role="option"><span class="dot" style="background:var(--border)"></span><span>Sem prioridade</span>' + (none ? '<span class="check">✓</span>' : '') + '</button>');
+    }
+    prioPop.innerHTML = opts.join('');
+    prioPop.hidden = false;
+    var r = anchor.getBoundingClientRect();
+    var pw = prioPop.offsetWidth, ph = prioPop.offsetHeight;
+    var left = Math.min(Math.max(8, r.left), window.innerWidth - pw - 8);
+    var top = r.bottom + 4;
+    if (top + ph > window.innerHeight - 8) top = Math.max(8, r.top - ph - 4);
+    prioPop.style.left = left + 'px';
+    prioPop.style.top = top + 'px';
+    var cur = $('.prio-opt.on', prioPop) || $('.prio-opt', prioPop);
+    if (cur) cur.focus();
+  }
+  function closePrioPop() { prioPop.hidden = true; prioCtx = null; }
+  prioPop.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-prio]');
+    if (!b || !prioCtx) return;
+    var p = byId(state.projects, prioCtx.id);
+    closePrioPop();
+    if (!p || p.priorityId === b.dataset.prio) return;
+    p.priorityId = b.dataset.prio;
+    save();
+    refreshData();
+  });
+  prioPop.addEventListener('keydown', function (e) {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    var all = $$('.prio-opt', prioPop);
+    var i = all.indexOf(document.activeElement);
+    var n = e.key === 'ArrowDown' ? Math.min(all.length - 1, i + 1) : Math.max(0, i - 1);
+    all[n].focus();
+  });
+  window.addEventListener('resize', closePrioPop);
+
   colorPop.addEventListener('click', function (e) {
     var b = e.target.closest('.pal-c');
     if (b) { applyPick(b.dataset.c); closePop(); }
@@ -2785,6 +2857,7 @@
     if (ui.respOpen && !respBox.contains(t)) { ui.respOpen = false; renderResp(); }
     if (popCtx && !colorPop.contains(t) && !popCtx.anchor.contains(t)) closePop();
     if (progCtx && !progPop.contains(t) && !progCtx.anchor.contains(t)) closeProgPop();
+    if (prioCtx && !prioPop.contains(t) && !prioCtx.anchor.contains(t)) closePrioPop();
   });
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
@@ -2792,6 +2865,7 @@
     if (!unlockEl.hidden) { closeUnlock(); setSync('error', 'Não conectado'); return; }
     if (popCtx) { closePop(); return; }
     if (progCtx) { closeProgPop(); return; }
+    if (prioCtx) { closePrioPop(); return; }
     if (ui.respOpen) { ui.respOpen = false; renderResp(); return; }
     if (!modalEl.hidden) { closeModal(); return; }
     if (ui.openFilter) { ui.openFilter = null; renderFilters(); }
