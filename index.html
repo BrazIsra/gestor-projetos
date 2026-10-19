@@ -362,6 +362,24 @@
   .prio-opt:hover, .prio-opt:focus-visible { background: var(--hover); outline: none; }
   .prio-opt.on { font-weight: 700; }
   .prio-opt .check { margin-left: auto; color: var(--primary); }
+  .cell.c-type, .cell.c-resp, .cell.c-due { cursor: pointer; border-radius: 8px; }
+  .cell.c-type:hover, .cell.c-resp:hover, .cell.c-due:hover { background: var(--hover); }
+  .cell.c-type:focus-visible, .cell.c-resp:focus-visible, .cell.c-due:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+  .prio-pop .avatar { flex: none; }
+  .prio-pop .pick-empty { padding: 10px; color: var(--muted); font-size: 13px; }
+  .prio-pop.cal { width: 268px; padding: 10px; }
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-weight: 700; }
+  .cal-nav { width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; font-size: 18px; cursor: pointer; }
+  .cal-nav:hover { background: var(--hover); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-wd { text-align: center; font-size: 11px; color: var(--muted); padding: 4px 0; }
+  .cal-day { height: 32px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; font-size: 13px; cursor: pointer; }
+  .cal-day:hover, .cal-day:focus-visible { background: var(--hover); outline: none; }
+  .cal-day.today { box-shadow: inset 0 0 0 1px var(--primary); }
+  .cal-day.on { background: var(--primary); color: #fff; font-weight: 700; }
+  .cal-foot { display: flex; justify-content: space-between; gap: 6px; margin-top: 8px; }
+  .cal-foot button { flex: 1; padding: 7px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: inherit; font: inherit; font-size: 13px; cursor: pointer; }
+  .cal-foot button:hover { background: var(--hover); }
   .cell.c-prog:hover .prog-track { border-color: var(--primary); }
   .cell.c-prog:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
   .card-prog { margin-top: 10px; }
@@ -1724,10 +1742,10 @@
       '<div class="cell handle" title="Arraste para mover">' + ICON.grip + '</div>' +
       '<div class="cell c-name"><div class="p-name">' + esc(p.name) + '</div>' + (sub ? '<div class="p-desc">' + esc(sub) + '</div>' : '') + '</div>' +
       '<div class="cell fill c-prio" data-label="Prioridade" tabindex="0" role="button" title="Clique para mudar a prioridade">' + pill(pr, 'Sem prioridade') + '</div>' +
-      '<div class="cell" data-label="Prazo">' + dueHTML(p) + '</div>' +
+      '<div class="cell c-due" data-label="Prazo" tabindex="0" role="button" title="Clique para mudar o prazo">' + dueHTML(p) + '</div>' +
       '<div class="cell c-prog" data-label="Andamento" tabindex="0" role="button" title="Clique para mudar o andamento">' + progHTML(p.progress) + '</div>' +
-      '<div class="cell c-resp" data-label="Responsável"><span class="resp-wrap">' + avatarsHTML(p.responsibles, true) + '</span></div>' +
-      '<div class="cell" data-label="Tipo">' + tag(ty, 'Sem tipo') + '</div>' +
+      '<div class="cell c-resp" data-label="Responsável" tabindex="0" role="button" title="Clique para mudar os responsáveis"><span class="resp-wrap">' + avatarsHTML(p.responsibles, true) + '</span></div>' +
+      '<div class="cell c-type" data-label="Tipo" tabindex="0" role="button" title="Clique para mudar o tipo">' + tag(ty, 'Sem tipo') + '</div>' +
       '</div>';
   }
 
@@ -1779,7 +1797,7 @@
   }
 
   tbody.addEventListener('click', function (e) {
-    var pq = e.target.closest('.c-prio');
+    var pq = e.target.closest(PICK_SEL);
     if (pq) {
       if (prioCtx && prioCtx.anchor === pq) closePrioPop();
       else openPrioPop(pq, pq.closest('.row').dataset.id);
@@ -1820,7 +1838,7 @@
     }
   });
   tbody.addEventListener('keydown', function (e) {
-    var pq = e.target.closest('.c-prio');
+    var pq = e.target.closest(PICK_SEL);
     if (pq && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
       openPrioPop(pq, pq.closest('.row').dataset.id);
@@ -1855,7 +1873,7 @@
   tbody.addEventListener('pointerdown', function (e) {
     var row = e.target.closest('.row');
     if (!row || e.button !== 0) return;
-    if (e.target.closest('.c-prog') || e.target.closest('.c-prio')) return;
+    if (e.target.closest('.c-prog') || e.target.closest(PICK_SEL)) return;
     var onHandle = !!e.target.closest('.handle');
     rowDrag = {
       row: row, id: row.dataset.id, pointerId: e.pointerId,
@@ -2612,51 +2630,132 @@
   progPop.addEventListener('keydown', function (e) { if (e.key === 'Enter') closeProgPop(); });
   window.addEventListener('resize', closeProgPop);
 
-  /* ---------- Mudar a prioridade direto na linha ---------- */
+  /* ---------- Mudar prioridade, tipo, responsáveis e prazo direto na linha ---------- */
+  var PICK_SEL = '.c-prio, .c-type, .c-resp, .c-due';
+  var MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   var prioPop = $('#prioPop');
   var prioCtx = null;
-  function openPrioPop(anchor, id) {
-    var p = byId(state.projects, id);
-    if (!p) return;
-    closePop(); closeProgPop();
-    prioCtx = { anchor: anchor, id: id };
-    var hasNone = state.priorities.some(function (x) { return norm(x.name) === 'sem prioridade'; });
-    var opts = state.priorities.map(function (x) {
-      var on = p.priorityId === x.id;
-      return '<button type="button" class="prio-opt' + (on ? ' on' : '') + '" data-prio="' + esc(x.id) + '" role="option" aria-selected="' + on + '">' +
-        '<span class="dot" style="background:' + esc(x.color) + '"></span><span>' + esc(x.name) + '</span>' + (on ? '<span class="check">✓</span>' : '') + '</button>';
-    });
-    if (!hasNone) {
-      var none = !byId(state.priorities, p.priorityId);
-      opts.push('<button type="button" class="prio-opt' + (none ? ' on' : '') + '" data-prio="" role="option"><span class="dot" style="background:var(--border)"></span><span>Sem prioridade</span>' + (none ? '<span class="check">✓</span>' : '') + '</button>');
+  function pickKind(cell) {
+    return cell.classList.contains('c-prio') ? 'prio' : cell.classList.contains('c-type') ? 'type' : cell.classList.contains('c-resp') ? 'resp' : 'due';
+  }
+  function optHTML(val, on, lead, name) {
+    return '<button type="button" class="prio-opt' + (on ? ' on' : '') + '" data-val="' + esc(val) + '" role="option" aria-selected="' + on + '">' +
+      lead + '<span>' + esc(name) + '</span>' + (on ? '<span class="check">✓</span>' : '') + '</button>';
+  }
+  function dotHTML(color) { return '<span class="dot" style="background:' + esc(color) + '"></span>'; }
+  function calHTML(p) {
+    var y = prioCtx.y, m = prioCtx.m;
+    var t = new Date(); var todayS = t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate());
+    var first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
+    var h = '<div class="cal-head"><button type="button" class="cal-nav" data-nav="-1" title="Mês anterior">‹</button><span>' + MESES[m] + ' ' + y + '</span>' +
+      '<button type="button" class="cal-nav" data-nav="1" title="Próximo mês">›</button></div><div class="cal-grid">' +
+      ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(function (d) { return '<div class="cal-wd">' + d + '</div>'; }).join('');
+    for (var i = 0; i < first; i++) h += '<div></div>';
+    for (var d = 1; d <= days; d++) {
+      var ds = y + '-' + pad(m + 1) + '-' + pad(d);
+      h += '<button type="button" class="cal-day' + (ds === p.deadline ? ' on' : '') + (ds === todayS ? ' today' : '') + '" data-day="' + ds + '">' + d + '</button>';
     }
+    return h + '</div><div class="cal-foot"><button type="button" data-day="' + todayS + '">Hoje</button><button type="button" data-day="">Sem prazo</button></div>';
+  }
+  function renderPick() {
+    var p = byId(state.projects, prioCtx.id);
+    if (!p) { closePrioPop(); return; }
+    var k = prioCtx.kind, opts = [];
+    prioPop.classList.toggle('cal', k === 'due');
+    if (k === 'prio') {
+      var hasNone = state.priorities.some(function (x) { return norm(x.name) === 'sem prioridade'; });
+      opts = state.priorities.map(function (x) { return optHTML(x.id, p.priorityId === x.id, dotHTML(x.color), x.name); });
+      if (!hasNone) opts.push(optHTML('', !byId(state.priorities, p.priorityId), dotHTML('var(--border)'), 'Sem prioridade'));
+    } else if (k === 'type') {
+      opts = state.types.map(function (x) { return optHTML(x.id, p.typeId === x.id, dotHTML(x.color), x.name); });
+      opts.push(optHTML('', !byId(state.types, p.typeId), dotHTML('var(--border)'), 'Sem tipo'));
+    } else if (k === 'resp') {
+      opts = state.collaborators.map(function (c) {
+        return optHTML(c.id, p.responsibles.indexOf(c.id) >= 0, '<span class="avatar" style="background:' + esc(c.color) + '">' + esc(initials(c.name)) + '</span>', c.name);
+      });
+      if (!opts.length) opts.push('<div class="pick-empty">Nenhum colaborador cadastrado. Cadastre em Configurações.</div>');
+    } else {
+      opts.push(calHTML(p));
+    }
+    prioPop.setAttribute('aria-multiselectable', k === 'resp' ? 'true' : 'false');
     prioPop.innerHTML = opts.join('');
-    prioPop.hidden = false;
-    var r = anchor.getBoundingClientRect();
+  }
+  function placePick() {
+    var r = prioCtx.anchor.getBoundingClientRect();
     var pw = prioPop.offsetWidth, ph = prioPop.offsetHeight;
     var left = Math.min(Math.max(8, r.left), window.innerWidth - pw - 8);
     var top = r.bottom + 4;
     if (top + ph > window.innerHeight - 8) top = Math.max(8, r.top - ph - 4);
     prioPop.style.left = left + 'px';
     prioPop.style.top = top + 'px';
-    var cur = $('.prio-opt.on', prioPop) || $('.prio-opt', prioPop);
+  }
+  function openPrioPop(anchor, id) {
+    var p = byId(state.projects, id);
+    if (!p) return;
+    closePop(); closeProgPop();
+    prioCtx = { anchor: anchor, id: id, kind: pickKind(anchor) };
+    if (prioCtx.kind === 'due') {
+      var parts = (p.deadline || '').split('-').map(Number), t = new Date();
+      var ok = parts.length === 3 && parts[0];
+      prioCtx.y = ok ? parts[0] : t.getFullYear();
+      prioCtx.m = ok ? parts[1] - 1 : t.getMonth();
+    }
+    renderPick();
+    prioPop.hidden = false;
+    placePick();
+    var cur = $('.prio-opt.on', prioPop) || $('.cal-day.on', prioPop) || $('.cal-day.today', prioPop) || $('.prio-opt', prioPop) || $('.cal-day', prioPop);
     if (cur) cur.focus();
   }
   function closePrioPop() { prioPop.hidden = true; prioCtx = null; }
   prioPop.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-prio]');
-    if (!b || !prioCtx) return;
+    if (!prioCtx) return;
     var p = byId(state.projects, prioCtx.id);
+    if (!p) { closePrioPop(); return; }
+    var k = prioCtx.kind;
+    var nav = e.target.closest('[data-nav]');
+    if (nav) {
+      prioCtx.m += Number(nav.dataset.nav);
+      if (prioCtx.m < 0) { prioCtx.m = 11; prioCtx.y--; }
+      if (prioCtx.m > 11) { prioCtx.m = 0; prioCtx.y++; }
+      renderPick(); placePick();
+      var again = $('[data-nav="' + nav.dataset.nav + '"]', prioPop); if (again) again.focus();
+      return;
+    }
+    if (k === 'due') {
+      var dd = e.target.closest('[data-day]');
+      if (!dd) return;
+      closePrioPop();
+      if (p.deadline === dd.dataset.day) return;
+      p.deadline = dd.dataset.day;
+      save(); refreshData();
+      return;
+    }
+    var b = e.target.closest('[data-val]');
+    if (!b) return;
+    var v = b.dataset.val;
+    if (k === 'resp') {
+      var i = p.responsibles.indexOf(v);
+      if (i >= 0) p.responsibles.splice(i, 1); else p.responsibles.push(v);
+      save(); refreshData();
+      var row = $$('.row', tbody).filter(function (r) { return r.dataset.id === p.id; })[0];
+      var cell = row && $('.c-resp', row);
+      if (!cell) { closePrioPop(); return; }
+      prioCtx.anchor = cell;
+      renderPick(); placePick();
+      var f = $$('.prio-opt', prioPop).filter(function (x) { return x.dataset.val === v; })[0]; if (f) f.focus();
+      return;
+    }
     closePrioPop();
-    if (!p || p.priorityId === b.dataset.prio) return;
-    p.priorityId = b.dataset.prio;
-    save();
-    refreshData();
+    var field = k === 'prio' ? 'priorityId' : 'typeId';
+    if (p[field] === v) return;
+    p[field] = v;
+    save(); refreshData();
   });
   prioPop.addEventListener('keydown', function (e) {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-    e.preventDefault();
     var all = $$('.prio-opt', prioPop);
+    if (!all.length) return;
+    e.preventDefault();
     var i = all.indexOf(document.activeElement);
     var n = e.key === 'ArrowDown' ? Math.min(all.length - 1, i + 1) : Math.max(0, i - 1);
     all[n].focus();
