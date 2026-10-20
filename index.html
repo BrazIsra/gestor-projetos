@@ -476,6 +476,12 @@
   }
   .card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
   .card-meta .tag { font-size: 12.5px; }
+  .tags { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; }
+  .disc-picker { display: flex; flex-wrap: wrap; gap: 6px; min-height: 40px; align-items: center; }
+  .disc { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: inherit; font: inherit; font-size: 13px; cursor: pointer; }
+  .disc:hover { background: var(--hover); }
+  .disc.on { border-color: var(--dc); background: var(--primary-soft); font-weight: 600; }
+  .disc .check { color: var(--primary); font-size: 12px; }
   .card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; min-height: 26px; }
 
   /* ---------- Configurações ---------- */
@@ -807,8 +813,8 @@
         <textarea id="f-desc" rows="2"></textarea>
       </div>
       <div class="field">
-        <label for="f-type">Tipo</label>
-        <select id="f-type"></select>
+        <span class="label">Disciplinas</span>
+        <div id="f-type" class="disc-picker" role="group" aria-label="Disciplinas"></div>
       </div>
       <div class="field">
         <label for="f-client">Cliente</label>
@@ -1026,7 +1032,7 @@
     out.projects = out.projects.filter(function (p) { return p && p.id; }).map(function (p) {
       return {
         id: String(p.id), name: String(p.name || 'Sem nome'), desc: String(p.desc || ''),
-        typeId: p.typeId || '', client: String(p.client || ''), statusId: p.statusId || '',
+        typeIds: Array.isArray(p.typeIds) ? p.typeIds.filter(Boolean) : (p.typeId ? [p.typeId] : []), client: String(p.client || ''), statusId: p.statusId || '',
         priorityId: p.priorityId || '', deadline: String(p.deadline || ''), location: String(p.location || ''),
         responsibles: Array.isArray(p.responsibles) ? p.responsibles.slice() : [],
         notes: String(p.notes || ''),
@@ -1369,12 +1375,12 @@
   var FILTERS = [
     { key: 'status', label: 'Status', list: 'statuses', field: 'statusId' },
     { key: 'priority', label: 'Prioridade', list: 'priorities', field: 'priorityId' },
-    { key: 'type', label: 'Tipo', list: 'types', field: 'typeId' }
+    { key: 'type', label: 'Disciplina', list: 'types', field: 'typeIds' }
   ];
   var LISTS = [
     { key: 'priorities', title: 'Prioridades', sub: 'Arraste pelo ícone ⋮⋮ para mudar a ordem.', field: 'priorityId', noun: 'prioridade' },
     { key: 'statuses', title: 'Status', sub: 'Arraste pelo ícone ⋮⋮ para mudar a ordem. Ela define a ordem das caixas e das colunas do Board. Com "Zera prioridade" marcado, o projeto que entra nesse status fica Sem prioridade.', field: 'statusId', noun: 'status' },
-    { key: 'types', title: 'Tipos de projeto', sub: 'Arraste pelo ícone ⋮⋮ para mudar a ordem.', field: 'typeId', noun: 'tipo' }
+    { key: 'types', title: 'Disciplinas', sub: 'Arraste pelo ícone ⋮⋮ para mudar a ordem. Um projeto pode ter mais de uma disciplina.', field: 'typeIds', noun: 'esta disciplina' }
   ];
 
   /* Remove referências a itens que não existem mais */
@@ -1400,6 +1406,16 @@
     else p.completedAt = '';
   }
 
+  function hasRef(p, field, id) {
+    var v = p[field];
+    return Array.isArray(v) ? v.indexOf(id) >= 0 : v === id;
+  }
+  function typesOf(p) { return p.typeIds.map(function (id) { return byId(state.types, id); }).filter(Boolean); }
+  function typesHTML(p, emptyLabel) {
+    var ts = typesOf(p);
+    if (!ts.length) return emptyLabel ? '<span class="muted">' + esc(emptyLabel) + '</span>' : '';
+    return '<span class="tags">' + ts.map(function (t) { return tag(t, ''); }).join('') + '</span>';
+  }
   function purgeRefs() {
     FILTERS.forEach(function (def) {
       var ids = state[def.list].map(function (x) { return x.id; });
@@ -1408,6 +1424,7 @@
     var colabIds = state.collaborators.map(function (c) { return c.id; });
     state.projects.forEach(function (p) {
       p.responsibles = p.responsibles.filter(function (id) { return colabIds.indexOf(id) >= 0; });
+      p.typeIds = p.typeIds.filter(function (id) { return byId(state.types, id); });
     });
   }
 
@@ -1579,12 +1596,14 @@
   function passFilter(key, value) {
     var f = state.filters[key];
     if (!f.selected.length) return true;
-    var has = f.selected.indexOf(value) >= 0;
+    var has = Array.isArray(value)
+      ? value.some(function (v) { return f.selected.indexOf(v) >= 0; })
+      : f.selected.indexOf(value) >= 0;
     return f.mode === 'include' ? has : !has;
   }
   function matchSearch(p, q) {
     if (!q) return true;
-    var t = byId(state.types, p.typeId), s = byId(state.statuses, p.statusId), pr = byId(state.priorities, p.priorityId);
+    var t = { name: typesOf(p).map(function (x) { return x.name; }).join(' ') }, s = byId(state.statuses, p.statusId), pr = byId(state.priorities, p.priorityId);
     var names = p.responsibles.map(function (id) { var c = byId(state.collaborators, id); return c ? c.name : ''; });
     var hay = [p.name, p.desc, p.client, p.location, p.notes, t && t.name, s && s.name, pr && pr.name].concat(names).join(' ');
     return norm(hay).indexOf(q) >= 0;
@@ -1593,7 +1612,7 @@
     var q = norm(ui.search.trim());
     return state.projects.filter(function (p) {
       return passFilter('status', p.statusId) && passFilter('priority', p.priorityId) &&
-        passFilter('type', p.typeId) && matchSearch(p, q);
+        passFilter('type', p.typeIds) && matchSearch(p, q);
     });
   }
   function anyFilterActive() {
@@ -1608,7 +1627,7 @@
       if (n) total++;
       var badge = n ? '<span class="badge' + (f.mode === 'exclude' ? ' excl' : '') + '">' + (f.mode === 'exclude' ? 'exceto ' : '') + n + '</span>' : '';
       var opts = state[def.list].map(function (it) {
-        var count = state.projects.filter(function (p) { return p[def.field] === it.id; }).length;
+        var count = state.projects.filter(function (p) { return hasRef(p, def.field, it.id); }).length;
         return '<label class="opt"><input type="checkbox" data-f="check" value="' + esc(it.id) + '"' + (f.selected.indexOf(it.id) >= 0 ? ' checked' : '') + '>' +
           '<span class="dot" style="background:' + esc(it.color) + '"></span><span class="opt-name">' + esc(it.name) + '</span><span class="opt-count">' + count + '</span></label>';
       }).join('') || '<div class="multi-empty">Nenhum item cadastrado.</div>';
@@ -1689,7 +1708,7 @@
     { key: 'deadline', label: 'Prazo' },
     { key: 'progress', label: 'Andamento' },
     { key: 'responsible', label: 'Responsável' },
-    { key: 'type', label: 'Tipo' }
+    { key: 'type', label: 'Disciplina' }
   ];
   var collator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
   var CARET = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
@@ -1705,7 +1724,7 @@
         i = state.priorities.findIndex(function (x) { return x.id === p.priorityId; });
         return i < 0 ? null : i;
       case 'type':
-        i = state.types.findIndex(function (x) { return x.id === p.typeId; });
+        i = state.types.findIndex(function (x) { return p.typeIds.indexOf(x.id) >= 0; });
         return i < 0 ? null : i;
       case 'deadline': return p.deadline || null;
       case 'progress': return p.progress;
@@ -1742,7 +1761,6 @@
 
   function rowHTML(p, color) {
     var pr = byId(state.priorities, p.priorityId);
-    var ty = byId(state.types, p.typeId);
     var sub = p.desc || p.client || '';
     return '<div class="row" data-id="' + esc(p.id) + '" tabindex="0" style="--row-color:' + esc(color) + '">' +
       '<div class="cell handle" title="Arraste para mover">' + ICON.grip + '</div>' +
@@ -1751,7 +1769,7 @@
       '<div class="cell c-due" data-label="Prazo" tabindex="0" role="button" title="Clique para mudar o prazo">' + dueHTML(p) + '</div>' +
       '<div class="cell c-prog" data-label="Andamento" tabindex="0" role="button" title="Clique para mudar o andamento">' + progHTML(p.progress) + '</div>' +
       '<div class="cell c-resp" data-label="Responsável" tabindex="0" role="button" title="Clique para mudar os responsáveis"><span class="resp-wrap">' + avatarsHTML(p.responsibles, true) + '</span></div>' +
-      '<div class="cell c-type" data-label="Tipo" tabindex="0" role="button" title="Clique para mudar o tipo">' + tag(ty, 'Sem tipo') + '</div>' +
+      '<div class="cell c-type" data-label="Disciplina" tabindex="0" role="button" title="Clique para mudar as disciplinas">' + typesHTML(p, 'Sem disciplina') + '</div>' +
       '</div>';
   }
 
@@ -1973,11 +1991,10 @@
      ========================================================= */
   function cardHTML(p) {
     var pr = byId(state.priorities, p.priorityId);
-    var ty = byId(state.types, p.typeId);
     return '<div class="card" data-id="' + esc(p.id) + '" tabindex="0" style="--c:' + esc(pr ? pr.color : 'var(--border)') + '">' +
       '<div class="card-top"><span class="card-title">' + esc(p.name) + '</span><span class="card-grip" title="Arraste para mover">' + ICON.grip + '</span></div>' +
       (p.desc ? '<div class="card-desc">' + esc(p.desc) + '</div>' : '') +
-      '<div class="card-meta">' + pill(pr, 'Sem prioridade', 'sm') + (ty ? tag(ty, '') : '') + '</div>' +
+      '<div class="card-meta">' + pill(pr, 'Sem prioridade', 'sm') + typesHTML(p, '') + '</div>' +
       '<div class="card-prog" title="Andamento">' + progHTML(p.progress) + '</div>' +
       '<div class="card-foot">' + dueHTML(p) + avatarsHTML(p.responsibles, false) + '</div>' +
       '</div>';
@@ -2176,7 +2193,7 @@
      Configurações
      ========================================================= */
   function usage(field, id) {
-    return state.projects.filter(function (p) { return p[field] === id; }).length;
+    return state.projects.filter(function (p) { return hasRef(p, field, id); }).length;
   }
 
   function listPanel(def) {
@@ -2385,7 +2402,7 @@
     confirmBox('Remover "' + item.name + '"?', msg, 'Remover').then(function (ok) {
       if (!ok) return;
       state[key] = state[key].filter(function (x) { return x.id !== id; });
-      state.projects.forEach(function (p) { if (p[def.field] === id) p[def.field] = ''; });
+      state.projects.forEach(function (p) { if (Array.isArray(p[def.field])) p[def.field] = p[def.field].filter(function (x) { return x !== id; }); else if (p[def.field] === id) p[def.field] = ''; });
       purgeRefs(); save(); renderSettings(); refreshData();
       toast('Item removido.');
     });
@@ -2636,7 +2653,7 @@
   progPop.addEventListener('keydown', function (e) { if (e.key === 'Enter') closeProgPop(); });
   window.addEventListener('resize', closeProgPop);
 
-  /* ---------- Mudar prioridade, tipo, responsáveis e prazo direto na linha ---------- */
+  /* ---------- Mudar prioridade, disciplina, responsáveis e prazo direto na linha ---------- */
   var PICK_SEL = '.c-prio, .c-type, .c-resp, .c-due';
   var MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   var prioPop = $('#prioPop');
@@ -2673,8 +2690,8 @@
       opts = state.priorities.map(function (x) { return optHTML(x.id, p.priorityId === x.id, dotHTML(x.color), x.name); });
       if (!hasNone) opts.push(optHTML('', !byId(state.priorities, p.priorityId), dotHTML('var(--border)'), 'Sem prioridade'));
     } else if (k === 'type') {
-      opts = state.types.map(function (x) { return optHTML(x.id, p.typeId === x.id, dotHTML(x.color), x.name); });
-      opts.push(optHTML('', !byId(state.types, p.typeId), dotHTML('var(--border)'), 'Sem tipo'));
+      opts = state.types.map(function (x) { return optHTML(x.id, p.typeIds.indexOf(x.id) >= 0, dotHTML(x.color), x.name); });
+      if (!opts.length) opts.push('<div class="pick-empty">Nenhuma disciplina cadastrada. Cadastre em Configurações.</div>');
     } else if (k === 'resp') {
       opts = state.collaborators.map(function (c) {
         return optHTML(c.id, p.responsibles.indexOf(c.id) >= 0, '<span class="avatar" style="background:' + esc(c.color) + '">' + esc(initials(c.name)) + '</span>', c.name);
@@ -2683,7 +2700,7 @@
     } else {
       opts.push(calHTML(p));
     }
-    prioPop.setAttribute('aria-multiselectable', k === 'resp' ? 'true' : 'false');
+    prioPop.setAttribute('aria-multiselectable', (k === 'resp' || k === 'type') ? 'true' : 'false');
     prioPop.innerHTML = opts.join('');
   }
   function placePick() {
@@ -2739,12 +2756,14 @@
     var b = e.target.closest('[data-val]');
     if (!b) return;
     var v = b.dataset.val;
-    if (k === 'resp') {
-      var i = p.responsibles.indexOf(v);
-      if (i >= 0) p.responsibles.splice(i, 1); else p.responsibles.push(v);
+    if (k === 'resp' || k === 'type') {
+      var arr = k === 'resp' ? p.responsibles : p.typeIds;
+      var i = arr.indexOf(v);
+      if (i >= 0) arr.splice(i, 1); else arr.push(v);
+      if (k === 'type') arr.sort(function (a, b) { return state.types.findIndex(function (x) { return x.id === a; }) - state.types.findIndex(function (x) { return x.id === b; }); });
       save(); refreshData();
       var row = $$('.row', tbody).filter(function (r) { return r.dataset.id === p.id; })[0];
-      var cell = row && $('.c-resp', row);
+      var cell = row && $(k === 'resp' ? '.c-resp' : '.c-type', row);
       if (!cell) { closePrioPop(); return; }
       prioCtx.anchor = cell;
       renderPick(); placePick();
@@ -2752,7 +2771,7 @@
       return;
     }
     closePrioPop();
-    var field = k === 'prio' ? 'priorityId' : 'typeId';
+    var field = 'priorityId';
     if (p[field] === v) return;
     p[field] = v;
     save(); refreshData();
@@ -2793,6 +2812,21 @@
   var respSel = [];
   var downOnBackdrop = false;
 
+  var discSel = [];
+  function renderDisc() {
+    fType.innerHTML = state.types.length ? state.types.map(function (t) {
+      var on = discSel.indexOf(t.id) >= 0;
+      return '<button type="button" class="disc' + (on ? ' on' : '') + '" data-disc="' + esc(t.id) + '" aria-pressed="' + on + '" style="--dc:' + esc(t.color) + '">' +
+        '<span class="dot" style="background:' + esc(t.color) + '"></span>' + esc(t.name) + (on ? '<span class="check">✓</span>' : '') + '</button>';
+    }).join('') : '<span class="muted">Nenhuma disciplina cadastrada.</span>';
+  }
+  fType.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-disc]');
+    if (!b) return;
+    var i = discSel.indexOf(b.dataset.disc);
+    if (i >= 0) discSel.splice(i, 1); else discSel.push(b.dataset.disc);
+    renderDisc();
+  });
   function fillSelect(sel, list, value, emptyLabel) {
     sel.innerHTML = '<option value="">' + esc(emptyLabel) + '</option>' + list.map(function (i) {
       return '<option value="' + esc(i.id) + '">' + esc(i.name) + '</option>';
@@ -2814,10 +2848,10 @@
     $('#f-progress-range').value = p ? p.progress : 0;
     fLocation.value = p ? p.location : '';
     fNotes.value = p ? p.notes : '';
-    var firstType = state.types[0] ? state.types[0].id : '';
     var firstStatus = state.statuses[0] ? state.statuses[0].id : '';
     var midPriority = state.priorities.length ? state.priorities[Math.floor(state.priorities.length / 2)].id : '';
-    fillSelect(fType, state.types, p ? p.typeId : firstType, 'Sem tipo');
+    discSel = p ? p.typeIds.slice() : [];
+    renderDisc();
     fillSelect(fStatus, state.statuses, p ? p.statusId : (preset.statusId !== undefined ? preset.statusId : firstStatus), 'Sem status');
     var startStatus = fStatus.value;
     fillSelect(fPriority, state.priorities, p ? p.priorityId : (clearsPriority(startStatus) ? noPriorityId() : midPriority), 'Sem prioridade');
@@ -2849,7 +2883,7 @@
     var data = {
       name: name,
       desc: fDesc.value.trim(),
-      typeId: fType.value,
+      typeIds: state.types.map(function (x) { return x.id; }).filter(function (id) { return discSel.indexOf(id) >= 0; }),
       client: fClient.value.trim(),
       statusId: fStatus.value,
       priorityId: fPriority.value,
@@ -3021,11 +3055,11 @@
 
   function breakdown(list, items, field, filterKey, showDone) {
     var rows = items.map(function (it) {
-      var ps = list.filter(function (p) { return p[field] === it.id; });
+      var ps = list.filter(function (p) { return hasRef(p, field, it.id); });
       return { id: it.id, name: it.name, color: it.color, count: ps.length, done: showDone ? ps.filter(function (p) { return isDoneStatus(p.statusId); }).length : 0 };
     });
-    var orphans = list.filter(function (p) { return !byId(items, p[field]); });
-    if (orphans.length) rows.push({ id: '', name: 'Sem ' + (field === 'typeId' ? 'tipo' : field === 'statusId' ? 'status' : 'prioridade'), color: '#8b95a7', count: orphans.length, done: showDone ? orphans.filter(function (p) { return isDoneStatus(p.statusId); }).length : 0, noFilter: true });
+    var orphans = list.filter(function (p) { return Array.isArray(p[field]) ? !p[field].some(function (id) { return byId(items, id); }) : !byId(items, p[field]); });
+    if (orphans.length) rows.push({ id: '', name: 'Sem ' + (field === 'typeIds' ? 'disciplina' : field === 'statusId' ? 'status' : 'prioridade'), color: '#8b95a7', count: orphans.length, done: showDone ? orphans.filter(function (p) { return isDoneStatus(p.statusId); }).length : 0, noFilter: true });
     var max = Math.max.apply(null, rows.map(function (r) { return r.count; }).concat([1]));
     return rows.map(function (r) {
       return barRow({ id: r.id, name: r.name, color: r.color, count: r.count, done: r.done, max: max, pct: pctOf(r.count, list.length), filter: r.noFilter ? '' : filterKey });
@@ -3106,9 +3140,9 @@
     html += '<div class="st-card"><h3>Por status</h3><p class="sub">Em que etapa os projetos estão, na ordem das suas caixas.</p><div class="bars">' +
       breakdown(list, statusItems, 'statusId', 'status', false) + '</div></div>';
 
-    // Por tipo
-    html += '<div class="st-card"><h3>Por tipo</h3><p class="sub">Quantidade e porcentagem de cada tipo de projeto.</p><div class="bars">' +
-      breakdown(list, state.types, 'typeId', 'type', showDone) + '</div>' +
+    // Por disciplina
+    html += '<div class="st-card"><h3>Por disciplina</h3><p class="sub">Quantidade e porcentagem de projetos com cada disciplina (um projeto pode ter mais de uma).</p><div class="bars">' +
+      breakdown(list, state.types, 'typeIds', 'type', showDone) + '</div>' +
       (showDone ? '<div class="st-legend"><span><i></i>Abertos</span><span><i class="done"></i>Concluídos</span></div>' : '') + '</div>';
 
     // Por prioridade
@@ -3153,8 +3187,8 @@
     var respRows = state.collaborators.map(function (c) { return { id: c.id, name: c.name }; });
     html += '<div class="st-card wide"><h3>Responsável × Status</h3><p class="sub">Quantos projetos cada pessoa tem em cada etapa. Quanto mais forte a cor, mais projetos.</p>' +
       crossTable(respRows, stCols, list, function (p, r, c) { return p.responsibles.indexOf(r.id) >= 0 && p.statusId === c.id; }) + '</div>';
-    html += '<div class="st-card wide"><h3>Tipo × Status</h3><p class="sub">Quantos projetos de cada tipo estão em cada etapa.</p>' +
-      crossTable(state.types.map(function (t) { return { id: t.id, name: t.name }; }), stCols, list, function (p, r, c) { return p.typeId === r.id && p.statusId === c.id; }) + '</div>';
+    html += '<div class="st-card wide"><h3>Disciplina × Status</h3><p class="sub">Quantos projetos de cada disciplina estão em cada etapa.</p>' +
+      crossTable(state.types.map(function (t) { return { id: t.id, name: t.name }; }), stCols, list, function (p, r, c) { return p.typeIds.indexOf(r.id) >= 0 && p.statusId === c.id; }) + '</div>';
 
     // Concluídos por mês (datas registradas a partir desta versão)
     var withDate = all.filter(function (p) { return p.completedAt; });
