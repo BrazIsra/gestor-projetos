@@ -635,6 +635,11 @@
   .field.full { grid-column: 1 / -1; }
   .field > label, .field > .label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
   .req { color: var(--danger); }
+  .name-row { display: flex; align-items: flex-end; gap: 8px; }
+  .name-num { flex: 0 0 110px; display: flex; flex-direction: column; gap: 6px; }
+  .name-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .name-row label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+  .name-sep { padding-bottom: 10px; font-weight: 700; color: var(--muted); }
   .err { display: none; font-size: 12px; color: var(--danger); }
   .field.invalid input { border-color: var(--danger); }
   .field.invalid .err { display: block; }
@@ -804,9 +809,18 @@
     </div>
     <div class="modal-body">
       <div class="field full" id="nameField">
-        <label for="f-name">Nome do projeto <span class="req">*</span></label>
-        <input id="f-name" maxlength="120" autocomplete="off">
-        <small class="err">Informe o nome do projeto.</small>
+        <div class="name-row">
+          <div class="name-num">
+            <label for="f-num">Número <span class="req">*</span></label>
+            <input id="f-num" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="Ex.: 375">
+          </div>
+          <span class="name-sep" aria-hidden="true">-</span>
+          <div class="name-title">
+            <label for="f-name">Título <span class="req">*</span></label>
+            <input id="f-name" maxlength="120" autocomplete="off" placeholder="Ex.: REGULARIZAÇÃO">
+          </div>
+        </div>
+        <small class="err" id="nameErr">Informe o número e o título do projeto.</small>
       </div>
       <div class="field full">
         <label for="f-desc">Descrição</label>
@@ -1031,7 +1045,7 @@
     });
     out.projects = out.projects.filter(function (p) { return p && p.id; }).map(function (p) {
       return {
-        id: String(p.id), name: String(p.name || 'Sem nome'), desc: String(p.desc || ''),
+        id: String(p.id), name: fmtName(String(p.name || 'Sem nome')), desc: String(p.desc || ''),
         typeIds: Array.isArray(p.typeIds) ? p.typeIds.filter(Boolean) : (p.typeId ? [p.typeId] : []), client: String(p.client || ''), statusId: p.statusId || '',
         priorityId: p.priorityId || '', deadline: String(p.deadline || ''), location: String(p.location || ''),
         responsibles: Array.isArray(p.responsibles) ? p.responsibles.slice() : [],
@@ -1406,6 +1420,14 @@
     else p.completedAt = '';
   }
 
+  function splitName(n) {
+    var m = /^\s*(\d+)\s*-\s*(.*?)\s*$/.exec(n || '');
+    return m ? { num: m[1], title: m[2] } : { num: '', title: (n || '').trim() };
+  }
+  function fmtName(n) {
+    var m = /^\s*(\d+)\s*-\s*(.*?)\s*$/.exec(n);
+    return m && m[2] ? m[1] + ' - ' + m[2] : n;
+  }
   function hasRef(p, field, id) {
     var v = p[field];
     return Array.isArray(v) ? v.indexOf(id) >= 0 : v === id;
@@ -1442,7 +1464,7 @@
   var modalEl = $('#modal');
   var form = $('#projectForm');
   var nameField = $('#nameField');
-  var fName = $('#f-name'), fDesc = $('#f-desc'), fType = $('#f-type'), fClient = $('#f-client');
+  var fNum = $('#f-num'), fName = $('#f-name'), fDesc = $('#f-desc'), fType = $('#f-type'), fClient = $('#f-client');
   var fStatus = $('#f-status'), fPriority = $('#f-priority'), fDeadline = $('#f-deadline');
   var fLocation = $('#f-location'), fNotes = $('#f-notes'), respBox = $('#f-resp');
   var deleteBtn = $('#deleteBtn');
@@ -2840,7 +2862,9 @@
     if (id && !p) return;
     editingId = p ? p.id : null;
     $('#modalTitle').textContent = p ? 'Editar projeto' : 'Novo projeto';
-    fName.value = p ? p.name : '';
+    var sp = splitName(p ? p.name : '');
+    fNum.value = sp.num;
+    fName.value = sp.title;
     fDesc.value = p ? p.desc : '';
     fClient.value = p ? p.client : '';
     fDeadline.value = p ? p.deadline : '';
@@ -2866,7 +2890,7 @@
     modalEl.hidden = false;
     modalEl.scrollTop = 0;
     document.body.classList.add('no-scroll');
-    setTimeout(function () { fName.focus(); }, 40);
+    setTimeout(function () { (fNum.value ? fName : fNum).focus(); }, 40);
   }
 
   function closeModal() {
@@ -2878,8 +2902,17 @@
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
-    var name = fName.value.trim();
-    if (!name) { nameField.classList.add('invalid'); fName.focus(); return; }
+    var num = fNum.value.trim(), title = fName.value.trim();
+    var nameErr = $('#nameErr');
+    if (!/^\d+$/.test(num)) {
+      nameErr.textContent = num ? 'O número deve ter só dígitos.' : 'Informe o número do projeto.';
+      nameField.classList.add('invalid'); fNum.focus(); return;
+    }
+    if (!title) {
+      nameErr.textContent = 'Informe o título do projeto.';
+      nameField.classList.add('invalid'); fName.focus(); return;
+    }
+    var name = num + ' - ' + title;
     var data = {
       name: name,
       desc: fDesc.value.trim(),
@@ -2912,6 +2945,11 @@
     renderSettings();
   });
   fName.addEventListener('input', function () { nameField.classList.remove('invalid'); });
+  fNum.addEventListener('input', function () {
+    var v = fNum.value.replace(/\D+/g, '');
+    if (v !== fNum.value) fNum.value = v;
+    nameField.classList.remove('invalid');
+  });
   $('#f-progress-range').addEventListener('input', function () { $('#f-progress').value = this.value; });
   $('#f-progress').addEventListener('input', function () {
     $('#f-progress-range').value = Math.max(0, Math.min(100, Math.round(Number(this.value) || 0)));
