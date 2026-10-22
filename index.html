@@ -1786,7 +1786,7 @@
 
   function rowHTML(p, color) {
     var pr = byId(state.priorities, p.priorityId);
-    var sub = p.notes || '';
+    var sub = isDone(p) ? '' : (p.notes || p.desc || '');
     return '<div class="row" data-id="' + esc(p.id) + '" tabindex="0" style="--row-color:' + esc(color) + '">' +
       '<div class="cell handle" title="Arraste para mover">' + ICON.grip + '</div>' +
       '<div class="cell c-name"><div class="p-name">' + esc(p.name) + '</div>' + (sub ? '<div class="p-desc">' + esc(sub) + '</div>' : '') + '</div>' +
