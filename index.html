@@ -330,10 +330,12 @@
   .tag span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .due { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; }
   .due svg { width: 14px; height: 14px; color: var(--muted); }
-  .due.late { color: var(--danger); font-weight: 600; }
+  .due.late { color: var(--danger); font-weight: 700; }
   .due.late svg { color: var(--danger); }
   .due.soon { color: var(--warn); font-weight: 600; }
   .due.soon svg { color: var(--warn); }
+  .due.ok { color: #22a06b; font-weight: 600; }
+  .due.ok svg { color: #22a06b; }
   .avatars { display: inline-flex; align-items: center; flex: none; }
   .avatar {
     width: 26px; height: 26px; flex: none;
@@ -1589,8 +1591,9 @@
     var cls = '', tip = '';
     if (!isDone(p)) {
       if (diff < 0) { cls = 'late'; tip = 'Atrasado há ' + (-diff) + ' dia(s)'; }
-      else if (diff === 0) { cls = 'soon'; tip = 'Vence hoje'; }
-      else if (diff <= 3) { cls = 'soon'; tip = 'Vence em ' + diff + ' dia(s)'; }
+      else if (diff === 0) { cls = 'late'; tip = 'Vence hoje'; }
+      else if (diff <= 2) { cls = 'soon'; tip = 'Vence em ' + diff + ' dia(s)'; }
+      else { cls = 'ok'; tip = 'Vence em ' + diff + ' dias'; }
     }
     return '<span class="due ' + cls + '"' + (tip ? ' title="' + tip + '"' : '') + '>' + ICON.cal + pad(parts[2]) + '/' + pad(parts[1]) + '/' + parts[0] + '</span>';
   }
