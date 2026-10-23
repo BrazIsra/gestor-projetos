@@ -843,7 +843,7 @@
       </div>
       <div class="field">
         <span class="label">Disciplinas</span>
-        <div id="f-type" class="disc-picker" role="group" aria-label="Disciplinas"></div>
+        <div id="f-type" class="multi"></div>
       </div>
       <div class="field">
         <label for="f-client">Cliente</label>
@@ -2859,19 +2859,47 @@
   var respSel = [];
   var downOnBackdrop = false;
 
-  var discSel = [];
+  var discSel = [], discOpen = false;
   function renderDisc() {
-    fType.innerHTML = state.types.length ? state.types.map(function (t) {
-      var on = discSel.indexOf(t.id) >= 0;
-      return '<button type="button" class="disc' + (on ? ' on' : '') + '" data-disc="' + esc(t.id) + '" aria-pressed="' + on + '" style="--dc:' + esc(t.color) + '">' +
-        '<span class="dot" style="background:' + esc(t.color) + '"></span>' + esc(t.name) + (on ? '<span class="check">✓</span>' : '') + '</button>';
-    }).join('') : '<span class="muted">Nenhuma disciplina cadastrada.</span>';
+    var chosen = state.types.filter(function (t) { return discSel.indexOf(t.id) >= 0; });
+    var chips = chosen.length ? chosen.map(function (t) {
+      return '<span class="chip"><span class="dot" style="background:' + esc(t.color) + ';margin-left:6px"></span>' + esc(t.name) +
+        '<button type="button" data-rmdisc="' + esc(t.id) + '" aria-label="Remover ' + esc(t.name) + '">×</button></span>';
+    }).join('') : '<span class="placeholder">Selecione uma ou mais disciplinas</span>';
+    var list = state.types.length ? state.types.map(function (t) {
+      return '<label class="opt"><input type="checkbox" value="' + esc(t.id) + '"' + (discSel.indexOf(t.id) >= 0 ? ' checked' : '') + '>' +
+        '<span class="dot" style="background:' + esc(t.color) + '"></span><span class="opt-name">' + esc(t.name) + '</span></label>';
+    }).join('') : '<div class="multi-empty">Nenhuma disciplina cadastrada.<br>Cadastre na aba <b>Configurações</b>.</div>';
+    fType.classList.toggle('open', discOpen);
+    fType.innerHTML = '<div class="multi-trigger" tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="' + discOpen + '">' +
+      chips + '<span class="caret">▾</span></div>' + (discOpen ? '<div class="multi-panel" role="listbox">' + list + '</div>' : '');
   }
   fType.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-disc]');
-    if (!b) return;
-    var i = discSel.indexOf(b.dataset.disc);
-    if (i >= 0) discSel.splice(i, 1); else discSel.push(b.dataset.disc);
+    var rm = e.target.closest('[data-rmdisc]');
+    if (rm) {
+      e.stopPropagation();
+      discSel = discSel.filter(function (x) { return x !== rm.dataset.rmdisc; });
+      renderDisc();
+      return;
+    }
+    if (e.target.closest('.multi-trigger')) {
+      discOpen = !discOpen;
+      if (discOpen && ui.respOpen) { ui.respOpen = false; renderResp(); }
+      renderDisc();
+    }
+  });
+  fType.addEventListener('keydown', function (e) {
+    if (e.target.classList.contains('multi-trigger') && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault(); discOpen = !discOpen; renderDisc();
+      var t = $('.multi-trigger', fType); if (t) t.focus();
+    }
+  });
+  fType.addEventListener('change', function (e) {
+    var input = e.target;
+    if (input.type !== 'checkbox') return;
+    var i = discSel.indexOf(input.value);
+    if (input.checked && i < 0) discSel.push(input.value);
+    if (!input.checked && i >= 0) discSel.splice(i, 1);
     renderDisc();
   });
   function fillSelect(sel, list, value, emptyLabel) {
@@ -2900,7 +2928,7 @@
     fNotes.value = p ? p.notes : '';
     var firstStatus = state.statuses[0] ? state.statuses[0].id : '';
     var midPriority = state.priorities.length ? state.priorities[Math.floor(state.priorities.length / 2)].id : '';
-    discSel = p ? p.typeIds.slice() : [];
+    discSel = p ? p.typeIds.slice() : []; discOpen = false;
     renderDisc();
     fillSelect(fStatus, state.statuses, p ? p.statusId : (preset.statusId !== undefined ? preset.statusId : firstStatus), 'Sem status');
     var startStatus = fStatus.value;
@@ -3062,6 +3090,7 @@
     var t = e.target;
     if (ui.openFilter && !t.closest('.filter')) { ui.openFilter = null; renderFilters(); }
     if (ui.respOpen && !respBox.contains(t)) { ui.respOpen = false; renderResp(); }
+    if (discOpen && !fType.contains(t)) { discOpen = false; renderDisc(); }
     if (popCtx && !colorPop.contains(t) && !popCtx.anchor.contains(t)) closePop();
     if (progCtx && !progPop.contains(t) && !progCtx.anchor.contains(t)) closeProgPop();
     if (prioCtx && !prioPop.contains(t) && !prioCtx.anchor.contains(t)) closePrioPop();
@@ -3074,6 +3103,7 @@
     if (progCtx) { closeProgPop(); return; }
     if (prioCtx) { closePrioPop(); return; }
     if (ui.respOpen) { ui.respOpen = false; renderResp(); return; }
+    if (discOpen) { discOpen = false; renderDisc(); return; }
     if (!modalEl.hidden) { closeModal(); return; }
     if (ui.openFilter) { ui.openFilter = null; renderFilters(); }
   });
