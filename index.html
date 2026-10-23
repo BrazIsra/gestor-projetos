@@ -409,8 +409,8 @@
   .prog-quick button { padding: 5px 0; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); font-size: 12px; font-weight: 600; cursor: pointer; }
   .prog-quick button:hover, .prog-quick button.on { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
   input[type="range"].prog-range {
-    -webkit-appearance: none; appearance: none; width: 100%; height: 6px; margin: 8px 0; border-radius: 999px; cursor: pointer;
-    background: linear-gradient(to right, var(--primary) 0 var(--v, 0%), var(--border) var(--v, 0%) 100%);
+    -webkit-appearance: none; appearance: none; width: 100%; height: 6px; min-height: 0; margin: 8px 0; padding: 0; border: 0; box-shadow: none; outline: none; border-radius: 999px; cursor: pointer;
+    background: linear-gradient(to right, var(--primary) 0 calc(8px + (100% - 16px) * var(--p, 0)), var(--border) calc(8px + (100% - 16px) * var(--p, 0)) 100%);
   }
   input[type="range"].prog-range::-webkit-slider-thumb {
     -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%;
@@ -2647,7 +2647,7 @@
     closePop();
     progCtx = { anchor: anchor, id: id, changed: false };
     progPop.innerHTML = '<div class="prog-pop-head"><span>Andamento</span><span id="progPopNum">' + p.progress + '%</span></div>' +
-      '<input type="range" class="prog-range" id="progPopRange" min="0" max="100" step="5" value="' + p.progress + '" style="--v:' + p.progress + '%" aria-label="Andamento em porcentagem">' +
+      '<input type="range" class="prog-range" id="progPopRange" min="0" max="100" step="5" value="' + p.progress + '" style="--p:' + (p.progress / 100) + '" aria-label="Andamento em porcentagem">' +
       '<div class="prog-quick">' + [0, 25, 50, 75, 100].map(function (v) {
         return '<button type="button" data-v="' + v + '"' + (p.progress === v ? ' class="on"' : '') + '>' + v + '%</button>';
       }).join('') + '</div>';
@@ -2966,7 +2966,7 @@
     if (v !== fNum.value) fNum.value = v;
     nameField.classList.remove('invalid');
   });
-  function paintRange(el) { if (el) el.style.setProperty('--v', el.value + '%'); }
+  function paintRange(el) { if (el) el.style.setProperty('--p', el.value / 100); }
   document.addEventListener('input', function (e) { if (e.target.classList && e.target.classList.contains('prog-range')) paintRange(e.target); }, true);
   $('#f-progress-range').addEventListener('input', function () { $('#f-progress').value = this.value; });
   $('#f-progress').addEventListener('input', function () {
