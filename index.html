@@ -649,6 +649,7 @@
   .field.full { grid-column: 1 / -1; }
   .field > label, .field > .label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
   .req { color: var(--danger); }
+  textarea.autogrow { resize: none; overflow: hidden; }
   .name-row { display: flex; align-items: flex-end; gap: 8px; }
   .name-num { flex: 0 0 110px; display: flex; flex-direction: column; gap: 6px; }
   .name-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
@@ -1481,6 +1482,15 @@
   var fNum = $('#f-num'), fName = $('#f-name'), fDesc = $('#f-desc'), fType = $('#f-type'), fClient = $('#f-client');
   var fStatus = $('#f-status'), fPriority = $('#f-priority'), fDeadline = $('#f-deadline');
   var fLocation = $('#f-location'), fNotes = $('#f-notes'), respBox = $('#f-resp');
+  function autoGrow(el) {
+    el.style.height = 'auto';
+    var b = el.offsetHeight - el.clientHeight;
+    el.style.height = (el.scrollHeight + b) + 'px';
+  }
+  [fDesc, fNotes].forEach(function (el) {
+    el.classList.add('autogrow');
+    el.addEventListener('input', function () { autoGrow(el); });
+  });
   var deleteBtn = $('#deleteBtn');
   var confirmEl = $('#confirm');
   var colorPop = $('#colorPop');
@@ -2904,6 +2914,7 @@
     closePop();
     ui.openFilter = null; renderFilters();
     modalEl.hidden = false;
+    autoGrow(fDesc); autoGrow(fNotes);
     modalEl.scrollTop = 0;
     document.body.classList.add('no-scroll');
     setTimeout(function () { (fNum.value ? fName : fNum).focus(); }, 40);
