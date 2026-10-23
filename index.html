@@ -408,7 +408,19 @@
   .prog-quick { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 10px; }
   .prog-quick button { padding: 5px 0; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); font-size: 12px; font-weight: 600; cursor: pointer; }
   .prog-quick button:hover, .prog-quick button.on { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
-  input[type="range"].prog-range { width: 100%; accent-color: var(--primary); margin: 0; }
+  input[type="range"].prog-range {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 6px; margin: 8px 0; border-radius: 999px; cursor: pointer;
+    background: linear-gradient(to right, var(--primary) 0 var(--v, 0%), var(--border) var(--v, 0%) 100%);
+  }
+  input[type="range"].prog-range::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--primary); border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--primary);
+  }
+  input[type="range"].prog-range::-moz-range-thumb {
+    width: 12px; height: 12px; border-radius: 50%; background: var(--primary);
+    border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--primary);
+  }
+  input[type="range"].prog-range::-moz-range-track { background: transparent; }
   .prog-field { display: flex; align-items: center; gap: 12px; }
   .prog-field input[type="number"] { width: 84px; flex: none; }
   @keyframes flash { from { background: var(--primary-soft); } to { background: var(--surface); } }
@@ -2635,7 +2647,7 @@
     closePop();
     progCtx = { anchor: anchor, id: id, changed: false };
     progPop.innerHTML = '<div class="prog-pop-head"><span>Andamento</span><span id="progPopNum">' + p.progress + '%</span></div>' +
-      '<input type="range" class="prog-range" id="progPopRange" min="0" max="100" step="5" value="' + p.progress + '" aria-label="Andamento em porcentagem">' +
+      '<input type="range" class="prog-range" id="progPopRange" min="0" max="100" step="5" value="' + p.progress + '" style="--v:' + p.progress + '%" aria-label="Andamento em porcentagem">' +
       '<div class="prog-quick">' + [0, 25, 50, 75, 100].map(function (v) {
         return '<button type="button" data-v="' + v + '"' + (p.progress === v ? ' class="on"' : '') + '>' + v + '%</button>';
       }).join('') + '</div>';
@@ -2658,7 +2670,7 @@
     p.progress = v;
     progCtx.changed = true;
     $('#progPopNum').textContent = v + '%';
-    $('#progPopRange').value = v;
+    $('#progPopRange').value = v; paintRange($('#progPopRange'));
     $$('.prog-quick button', progPop).forEach(function (b) { b.classList.toggle('on', Number(b.dataset.v) === v); });
     if (document.body.contains(progCtx.anchor)) progCtx.anchor.innerHTML = progHTML(v);
     save();
@@ -2873,6 +2885,7 @@
     fDeadline.value = p ? p.deadline : '';
     $('#f-progress').value = p ? p.progress : 0;
     $('#f-progress-range').value = p ? p.progress : 0;
+    paintRange($('#f-progress-range'));
     fLocation.value = p ? p.location : '';
     fNotes.value = p ? p.notes : '';
     var firstStatus = state.statuses[0] ? state.statuses[0].id : '';
@@ -2953,16 +2966,19 @@
     if (v !== fNum.value) fNum.value = v;
     nameField.classList.remove('invalid');
   });
+  function paintRange(el) { if (el) el.style.setProperty('--v', el.value + '%'); }
+  document.addEventListener('input', function (e) { if (e.target.classList && e.target.classList.contains('prog-range')) paintRange(e.target); }, true);
   $('#f-progress-range').addEventListener('input', function () { $('#f-progress').value = this.value; });
   $('#f-progress').addEventListener('input', function () {
     $('#f-progress-range').value = Math.max(0, Math.min(100, Math.round(Number(this.value) || 0)));
+    paintRange($('#f-progress-range'));
   });
   $('#f-progress').addEventListener('change', function () {
     this.value = Math.max(0, Math.min(100, Math.round(Number(this.value) || 0)));
   });
   fStatus.addEventListener('change', function () {
     if (clearsPriority(fStatus.value)) fPriority.value = noPriorityId();
-    if (isDoneStatus(fStatus.value)) { $('#f-progress').value = 100; $('#f-progress-range').value = 100; }
+    if (isDoneStatus(fStatus.value)) { $('#f-progress').value = 100; $('#f-progress-range').value = 100; paintRange($('#f-progress-range')); }
   });
   $$('[data-close]', modalEl).forEach(function (b) { b.addEventListener('click', closeModal); });
   modalEl.addEventListener('pointerdown', function (e) { downOnBackdrop = e.target === modalEl; });
