@@ -262,6 +262,20 @@
   .ag-item.done { opacity: .55; }
   .ag-item.done b { text-decoration: line-through; }
   .ag-item .avatars { margin-left: auto; }
+  .ag-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 14px; align-items: stretch; }
+  .ag-side { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); min-width: 0; transition: background .12s; }
+  .ag-side.ag-drop { background: var(--primary-soft); box-shadow: inset 0 0 0 2px var(--primary); }
+  .ag-side-head { padding: 14px 12px 8px; font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 6px; }
+  .ag-side-head .count { margin-left: auto; }
+  .ag-side-sub { padding: 0 12px 8px; font-size: 11.5px; color: var(--muted); }
+  .ag-side .ag-list { overflow-y: auto; max-height: calc(100vh - var(--header-h) - 230px); }
+  .ag-late { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; padding: 10px 12px; border: 1px solid rgba(229,72,77,.35); border-radius: 12px; background: rgba(229,72,77,.07); }
+  .ag-late-t { font-size: 12.5px; font-weight: 700; color: var(--danger); margin-right: 4px; }
+  .ag-late .ag-item { width: auto; max-width: 240px; border-color: rgba(229,72,77,.35); }
+  .ag-late .ag-item small { color: var(--danger); }
+  .ag-mine { margin-left: 10px; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; user-select: none; }
+  .ag-mine input { width: auto; accent-color: var(--primary); }
+  @media (max-width: 1000px) { .ag-wrap { grid-template-columns: 1fr; } .ag-side .ag-list { max-height: 260px; } }
   .ag-foot { margin-top: 10px; font-size: 12.5px; color: var(--muted); text-align: center; }
   .ag-foot button { border: 0; background: none; padding: 0; font: inherit; color: var(--primary); cursor: pointer; }
   @media (max-width: 760px) {
@@ -2271,6 +2285,14 @@
   var DOW = ['dom.', 'seg.', 'ter.', 'qua.', 'qui.', 'sex.', 'sáb.'];
   var MES = ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.'];
   function isoDay(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  var agMine = !!readLocal(KP + 'agMine.v1');
+  function agMineOk(p) { var me = currentUser(); return !agMine || !me || p.responsibles.indexOf(me) >= 0; }
+  function agItemHTML(p, note) {
+    var pr = byId(state.priorities, p.priorityId), st = byId(state.statuses, p.statusId);
+    return '<button type="button" class="ag-item' + (isDone(p) ? ' done' : '') + '" data-open="' + esc(p.id) + '" style="--c:' + esc(pr ? pr.color : 'var(--border)') + '" title="' + esc(p.name) + '">' +
+      '<b>' + esc(p.name) + '</b><small>' + (note ? esc(note) : (st ? '<span class="dot" style="background:' + esc(st.color) + '"></span>' + esc(st.name) : 'Sem status')) +
+      avatarsHTML(p.responsibles, false) + '</small></button>';
+  }
   function renderBoard() {
     var today = new Date(); today.setHours(0, 0, 0, 0);
     var start = new Date(today); start.setDate(today.getDate() - today.getDay() + agendaWeek * 7);
@@ -2282,27 +2304,34 @@
     var shown = 0;
     var cols = days.map(function (d, i) {
       var iso = isoDay(d);
-      var items = state.projects.filter(function (p) { return p.deadline === iso; })
+      var items = state.projects.filter(function (p) { return p.deadline === iso && agMineOk(p); })
         .sort(function (a, b) { return (isDone(a) ? 1 : 0) - (isDone(b) ? 1 : 0) || collator.compare(a.name, b.name); });
       shown += items.length;
       return '<div class="ag-day' + (iso === todayIso ? ' today' : '') + '" data-day="' + iso + '">' +
         '<div class="ag-head"><div class="ag-dow">' + DOW[i] + '</div><div class="ag-num">' + d.getDate() + '</div></div>' +
-        '<div class="ag-list">' + items.map(function (p) {
-          var pr = byId(state.priorities, p.priorityId), st = byId(state.statuses, p.statusId);
-          return '<button type="button" class="ag-item' + (isDone(p) ? ' done' : '') + '" data-open="' + esc(p.id) + '" style="--c:' + esc(pr ? pr.color : 'var(--border)') + '" title="' + esc(p.name) + '">' +
-            '<b>' + esc(p.name) + '</b><small>' + (st ? '<span class="dot" style="background:' + esc(st.color) + '"></span>' + esc(st.name) : 'Sem status') +
-            avatarsHTML(p.responsibles, false) + '</small></button>';
-        }).join('') + '</div></div>';
+        '<div class="ag-list">' + items.map(function (p) { return agItemHTML(p); }).join('') + '</div></div>';
     }).join('');
-    var noDate = state.projects.filter(function (p) { return !p.deadline && !isDone(p); }).length;
+    var noDateList = state.projects.filter(function (p) { return !p.deadline && !isDone(p) && agMineOk(p); })
+      .sort(function (a, b) { return collator.compare(a.name, b.name); });
+    var late = state.projects.filter(function (p) { return p.deadline && p.deadline < todayIso && !isDone(p) && agMineOk(p); })
+      .sort(function (a, b) { return a.deadline.localeCompare(b.deadline); });
+    var me = currentUser();
     agendaEl.innerHTML = '<div class="ag-nav">' +
       '<button type="button" class="icon-btn" data-ag="-1" title="Semana anterior" aria-label="Semana anterior">‹</button>' +
       '<span class="ag-range">' + range + '</span>' +
       '<button type="button" class="icon-btn" data-ag="1" title="Próxima semana" aria-label="Próxima semana">›</button>' +
       (agendaWeek !== 0 ? '<button type="button" class="btn sm ag-today" data-ag="0">Hoje</button>' : '') +
-      '</div><div class="ag-grid">' + cols + '</div>' +
-      '<div class="ag-foot">' + (shown ? '' : 'Nenhum projeto com prazo nesta semana. ') +
-      (noDate ? noDate + ' projeto(s) em aberto sem prazo ficam fora da agenda.' : '') + '</div>';
+      (me ? '<label class="ag-mine"><input type="checkbox" id="agMine"' + (agMine ? ' checked' : '') + '> Só os meus</label>' : '') +
+      '</div>' +
+      (late.length ? '<div class="ag-late"><span class="ag-late-t">⚠ Atrasados (' + late.length + ')</span>' + late.map(function (p) {
+        var pa = p.deadline.split('-');
+        return agItemHTML(p, 'venceu ' + pa[2] + '/' + pa[1]);
+      }).join('') + '</div>' : '') +
+      '<div class="ag-wrap"><div class="ag-grid">' + cols + '</div>' +
+      '<div class="ag-side" data-day=""><div class="ag-side-head">Sem prazo <span class="count">' + noDateList.length + '</span></div>' +
+      '<div class="ag-side-sub">Arraste para um dia para definir o prazo. Solte aqui para tirar o prazo.</div>' +
+      '<div class="ag-list">' + noDateList.map(function (p) { return agItemHTML(p); }).join('') + '</div></div></div>' +
+      (!shown ? '<div class="ag-foot">Nenhum projeto com prazo nesta semana.</div>' : '');
   }
   /* Arrastar um projeto para outro dia muda o prazo */
   var agDrag = null, agSuppressClick = false;
@@ -2332,7 +2361,7 @@
     var d = agDrag;
     d.ghost.style.transform = 'translate(' + (x - d.dx) + 'px,' + (y - d.dy) + 'px) rotate(2deg) scale(1.03)';
     var under = document.elementFromPoint(x, y);
-    var day = under && under.closest ? under.closest('.ag-day') : null;
+    var day = under && under.closest ? under.closest('.ag-day, .ag-side') : null;
     if (day !== d.day) {
       if (d.day) d.day.classList.remove('ag-drop');
       d.day = day;
@@ -2383,7 +2412,7 @@
     var p = byId(state.projects, d.id);
     var target = drop && d.day ? d.day.dataset.day : null;
     if (d.day) d.day.classList.remove('ag-drop');
-    if (p && target && target !== p.deadline) {
+    if (p && target !== null && target !== undefined && target !== p.deadline) {
       var r = d.day.querySelector('.ag-list').getBoundingClientRect();
       d.ghost.style.transition = 'transform .15s ease, opacity .15s ease';
       d.ghost.style.transform = 'translate(' + (r.left + 8) + 'px,' + (r.top + 4) + 'px) rotate(0) scale(1)';
@@ -2392,7 +2421,7 @@
       p.deadline = target;
       save(); refreshData();
       var parts = target.split('-');
-      toast('Prazo de ' + p.name + ' mudou para ' + parts[2] + '/' + parts[1] + '/' + parts[0] + '.');
+      toast(target ? 'Prazo de ' + p.name + ' mudou para ' + parts[2] + '/' + parts[1] + '/' + parts[0] + '.' : 'Prazo de ' + p.name + ' removido.');
     } else {
       d.ghost.remove();
       d.el.classList.remove('ag-src');
@@ -2403,6 +2432,9 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && agDrag && agDrag.active) endAgDrag(false); });
   agendaEl.addEventListener('contextmenu', function (e) { if (agDrag) e.preventDefault(); });
 
+  agendaEl.addEventListener('change', function (e) {
+    if (e.target.id === 'agMine') { agMine = e.target.checked; writeLocal(KP + 'agMine.v1', agMine); renderBoard(); }
+  });
   agendaEl.addEventListener('click', function (e) {
     if (agSuppressClick) { e.preventDefault(); return; }
     var nav = e.target.closest('[data-ag]');
