@@ -2117,12 +2117,14 @@
     return norm(hay).indexOf(q) >= 0;
   }
   function passAllFilters(p) {
-    return passFilter('resp', p.responsibles) && passFilter('priority', p.priorityId) && passFilter('type', p.typeIds);
+    return passFilter('resp', respForFilter(p)) && passFilter('priority', p.priorityId) && passFilter('type', p.typeIds);
   }
+  /* em conferência, o conferente também conta no filtro de colaborador */
+  function respForFilter(p) { return isConfStatus(p.statusId) && p.checker ? p.responsibles.concat([p.checker]) : p.responsibles; }
   function filteredProjects() {
     var q = norm(ui.search.trim());
     return state.projects.filter(function (p) {
-      return passFilter('resp', p.responsibles) && passFilter('priority', p.priorityId) &&
+      return passFilter('resp', respForFilter(p)) && passFilter('priority', p.priorityId) &&
         passFilter('type', p.typeIds) && matchSearch(p, q);
     });
   }
@@ -2237,6 +2239,7 @@
       case 'deadline': return p.deadline || null;
       case 'progress': return p.progress;
       case 'responsible':
+        if (isConfStatus(p.statusId)) { var ck = byId(state.collaborators, p.checker); return ck ? ck.name : null; }
         var names = p.responsibles.map(function (id) { var c = byId(state.collaborators, id); return c ? c.name : ''; })
           .filter(Boolean).sort(collator.compare);
         return names.length ? names.join(', ') : null;
@@ -2276,7 +2279,9 @@
       '<div class="cell fill c-prio" data-label="Prioridade" tabindex="0" role="button" title="Clique para mudar a prioridade">' + pill(pr, 'Sem prioridade') + '</div>' +
       '<div class="cell c-due" data-label="Prazo" tabindex="0" role="button" title="Clique para mudar o prazo">' + dueHTML(p) + '</div>' +
       '<div class="cell c-prog" data-label="Andamento" tabindex="0" role="button" title="Clique para mudar o andamento">' + progHTML(p.progress) + '</div>' +
-      '<div class="cell c-resp" data-label="Responsável" tabindex="0" role="button" title="Clique para mudar os responsáveis"><span class="resp-wrap">' + avatarsHTML(p.responsibles, true) + '</span></div>' +
+      (isConfStatus(p.statusId)
+        ? '<div class="cell c-resp c-chk" data-label="Conferente" tabindex="0" role="button" title="Clique para escolher o conferente"><span class="resp-wrap">' + avatarsHTML(p.checker ? [p.checker] : [], true) + '</span></div>'
+        : '<div class="cell c-resp" data-label="Responsável" tabindex="0" role="button" title="Clique para mudar os responsáveis"><span class="resp-wrap">' + avatarsHTML(p.responsibles, true) + '</span></div>') +
       '<div class="cell c-type" data-label="Disciplina" tabindex="0" role="button" title="Clique para mudar as disciplinas">' + typesHTML(p, 'Sem disciplina') + '</div>' +
       '</div>';
   }
@@ -2292,12 +2297,13 @@
       '<button type="button" class="icon-btn sm" data-add="' + esc(g.id) + '" title="Novo projeto em ' + esc(g.name) + '">+</button>' +
       '</div>';
     if (collapsed) return '<div class="group collapsed" data-status="' + esc(g.id) + '" style="--gc:' + esc(g.color) + '">' + head + '</div>';
+    var confGroup = isConfStatus(g.id);
     var thead = '<div class="thead"><div></div>' + COLS.map(function (c) {
       var on = sort && sort.key === c.key;
       var arrow = on ? (sort.dir === 'desc' ? '▼' : '▲') : '';
       var tip = on ? (sort.dir === 'desc' ? 'Decrescente. Clique para crescente' : 'Crescente. Clique para decrescente') : 'Clique para classificar';
       return '<div><button type="button" class="sort-btn' + (on ? ' on' : '') + '" data-sort="' + c.key + '" title="' + tip + '">' +
-        c.label + '<span class="sort-arrow">' + arrow + '</span></button></div>';
+        (confGroup && c.key === 'responsible' ? 'Conferente' : c.label) + '<span class="sort-arrow">' + arrow + '</span></button></div>';
     }).join('') + '</div>';
     var body = items.length
       ? sortItems(items, sort).map(function (p) { return rowHTML(p, g.color); }).join('')
@@ -3578,7 +3584,7 @@
   var prioPop = $('#prioPop');
   var prioCtx = null;
   function pickKind(cell) {
-    return cell.classList.contains('c-prio') ? 'prio' : cell.classList.contains('c-type') ? 'type' : cell.classList.contains('c-resp') ? 'resp' : 'due';
+    return cell.classList.contains('c-prio') ? 'prio' : cell.classList.contains('c-type') ? 'type' : cell.classList.contains('c-chk') ? 'chk' : cell.classList.contains('c-resp') ? 'resp' : 'due';
   }
   function optHTML(val, on, lead, name) {
     return '<button type="button" class="prio-opt' + (on ? ' on' : '') + '" data-val="' + esc(val) + '" role="option" aria-selected="' + on + '">' +
@@ -3611,6 +3617,11 @@
     } else if (k === 'type') {
       opts = state.types.map(function (x) { return optHTML(x.id, p.typeIds.indexOf(x.id) >= 0, dotHTML(x.color), x.name); });
       if (!opts.length) opts.push('<div class="pick-empty">Nenhuma disciplina cadastrada. Cadastre em Configurações.</div>');
+    } else if (k === 'chk') {
+      opts = state.collaborators.map(function (c) {
+        return optHTML(c.id, p.checker === c.id, '<span class="avatar" style="background:' + esc(c.color) + '">' + esc(initials(c.name)) + '</span>', c.name);
+      });
+      opts.push(optHTML('', !p.checker, '<span class="avatar" style="background:var(--border)">–</span>', 'Ninguém definido'));
     } else if (k === 'resp') {
       opts = state.collaborators.map(function (c) {
         return optHTML(c.id, p.responsibles.indexOf(c.id) >= 0, '<span class="avatar" style="background:' + esc(c.color) + '">' + esc(initials(c.name)) + '</span>', c.name);
@@ -3690,6 +3701,7 @@
       return;
     }
     closePrioPop();
+    if (k === 'chk') { if ((p.checker || '') === v) return; p.checker = v; save(); refreshData(); return; }
     var field = 'priorityId';
     if (p[field] === v) return;
     p[field] = v;
@@ -4927,9 +4939,10 @@
   });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.12.0';
+  var APP_VERSION = '2.13.0';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.13.0', d: '28/10/2026', items: ['Na caixa Conferência, a coluna Responsável virou Conferente: mostra quem confere e permite trocar com um clique.', 'No filtro de colaborador, quem é conferente também vê os projetos que estão em conferência com ele.'] },
     { v: '2.12.0', d: '28/10/2026', items: ['Administrador pode apagar mensagens e linhas do histórico do projeto (ícone de lixeira ao passar o mouse).', 'Cada exclusão fica registrada no Histórico de atividades.'] },
     { v: '2.11.0', d: '28/10/2026', items: ['Conferente no projeto: escolha quem confere; ele é avisado no sininho quando o projeto entra em conferência.', 'Feriados obrigatórios (nacionais e de Lages-SC) marcados na agenda, com aviso ao arrastar um prazo para um feriado.', 'Ficha do projeto cabe na tela: o botão Salvar fica sempre visível.', 'Campo Observações removido: o texto que havia nele foi juntado ao fim da descrição.'] },
     { v: '2.10.0', d: '28/10/2026', items: ['Lista de versões e atualizações: clique na versão no rodapé (só administradores).'] },
