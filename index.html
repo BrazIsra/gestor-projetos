@@ -1156,7 +1156,7 @@
         <label for="f-checker">Conferente</label>
         <select id="f-checker"></select>
       </div>
-      <div class="field full">
+      <div class="field full" style="display:none"><!-- Observações saiu: o texto antigo foi juntado à descrição -->
         <label for="f-notes">Observações</label>
         <textarea id="f-notes" rows="3"></textarea>
       </div>
@@ -1371,6 +1371,12 @@
     };
   }
 
+  /* O campo Observações saiu: o que estava nele passa para o fim da descrição */
+  function mergeNotes(desc, notes) {
+    desc = String(desc || '').trim(); notes = String(notes || '').trim();
+    if (!notes) return desc;
+    return desc ? desc + '\n' + notes : notes;
+  }
   function normalize(d) {
     var def = defaults();
     if (!d || typeof d !== 'object') return def;
@@ -1390,12 +1396,12 @@
     });
     out.projects = out.projects.filter(function (p) { return p && p.id; }).map(function (p) {
       return {
-        id: String(p.id), name: fmtName(String(p.name || 'Sem nome')), desc: String(p.desc || ''),
+        id: String(p.id), name: fmtName(String(p.name || 'Sem nome')), desc: mergeNotes(p.desc, p.notes),
         typeIds: Array.isArray(p.typeIds) ? p.typeIds.filter(Boolean) : (p.typeId ? [p.typeId] : []), client: String(p.client || ''), statusId: p.statusId || '',
         priorityId: p.priorityId || '', deadline: String(p.deadline || ''), location: String(p.location || ''),
         responsibles: Array.isArray(p.responsibles) ? p.responsibles.slice() : [],
         checker: typeof p.checker === 'string' ? p.checker : '',
-        notes: String(p.notes || ''),
+        notes: '',
         progress: normProgress(p.progress, p.statusId, out.statuses),
         createdAt: /^\d{4}-\d{2}-\d{2}$/.test(p.createdAt || '') ? p.createdAt : '',
         completedAt: /^\d{4}-\d{2}-\d{2}$/.test(p.completedAt || '') ? p.completedAt : '',
@@ -2528,7 +2534,8 @@
     fx('09-07', 'Independência'); fx('10-12', 'Nossa Senhora Aparecida'); fx('11-02', 'Finados');
     fx('11-15', 'Proclamação da República'); fx('11-20', 'Consciência Negra'); fx('12-25', 'Natal');
     fx('08-15', 'N. Sra. dos Prazeres (Lages)'); /* feriado municipal de Lages-SC */
-    rel(easter(y), -2, 'Sexta-feira Santa'); /* Carnaval e Corpus Christi são ponto facultativo: ficam de fora */
+    var pa = easter(y);
+    rel(pa, -2, 'Sexta-feira Santa'); rel(pa, 60, 'Corpus Christi'); /* Corpus Christi é feriado em Lages; Carnaval é facultativo e fica de fora */
     return (holCache[y] = o);
   }
   function holidayOn(iso) { return holidays(+iso.slice(0, 4))[iso] || ''; }
@@ -4897,7 +4904,7 @@
   var APP_VERSION = '2.11.0';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
-    { v: '2.11.0', d: '28/10/2026', items: ['Conferente no projeto: escolha quem confere; ele é avisado no sininho quando o projeto entra em conferência.', 'Feriados obrigatórios (nacionais e de Lages-SC) marcados na agenda, com aviso ao arrastar um prazo para um feriado.', 'Ficha do projeto cabe na tela: o botão Salvar fica sempre visível.'] },
+    { v: '2.11.0', d: '28/10/2026', items: ['Conferente no projeto: escolha quem confere; ele é avisado no sininho quando o projeto entra em conferência.', 'Feriados obrigatórios (nacionais e de Lages-SC) marcados na agenda, com aviso ao arrastar um prazo para um feriado.', 'Ficha do projeto cabe na tela: o botão Salvar fica sempre visível.', 'Campo Observações removido: o texto que havia nele foi juntado ao fim da descrição.'] },
     { v: '2.10.0', d: '28/10/2026', items: ['Lista de versões e atualizações: clique na versão no rodapé (só administradores).'] },
     { v: '2.9.1', d: '28/10/2026', items: ['Transição suave na troca de abas, nas setas da agenda e nas estatísticas.'] },
     { v: '2.9.0', d: '28/10/2026', items: ['Agenda com visão do mês inteiro (botão Mês/Semana), com transição.', 'Arrastar projeto para outro dia também na visão do mês.', '"+N mais" quando o dia tem muitos projetos abre a semana daquele dia.'] },
