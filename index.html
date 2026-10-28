@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>Gestor de Projetos</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAE0AAABgBAMAAACqFeJrAAAAMFBMVEURSJYTSJYJT2kTR5MAAH8AP78URpIUR5MAAAAAAP8RSpMAf38TR5QHPn0JNpUTRZE5wAVuAAAAEHRSTlMjygebAgRl/gABEQKxBQdXbaqaZQAAAxBJREFUeNqN1k9IFFEcB/Dvm9mRZUFn+0OQEv2zW6NCEh4SvFTgiuRVIYKN8BIUhbGHYIukIRE9hGjSIUKiMDJa6BDU3hJFGgL3ZgheliSdxY1dZ9fsMDPrzOzMvN+77NuZLx9+b2febx9TYY4bchrBYzdiTfbe5BE2BOszORwag+VJHM72hjic5TXwOMsb5HGmx+dMr5fLIQKg4TOXg0CqDpNMRQPjcrtxgcRNX2OqJPC5EzsC/1EA0wmw0RiBq5SFJIkDm6BwKAs0DmKVyw3kgKpA48AeEKoDygKNAy83M7rg3Efeuy9qXFwLzhnTv+ypuI7g3Cv5uD3d14NzxrEuLagfuLikBkLOyCmBfcM53jfvgeAZSy99ahEvea+8i7bXx+rfA2NJCelrnOrq6wvg6nLzrzWk+TnjiwJKbv6TxnCX8XLGmILDlbNCnLPet83rbFwe6i788OZc+0M6H9dihSIkuVF3x9z7o39DYyMZoNJ9Ouy5SdLJfOxiM4C1glwOfm79GxqbygBApftjcH3S/KR2JF8052aFh+x7Jcd6r8ga/mR6YIJZANj2WYd0S4H4pMf6lkkCDI/PWONU5IKdu/7Iuyu+3by9YncPptYux3UAHyxwIAvx79WFWpdhM66d6lxHR3H5oBsJ2/bQAWBrLgsA6PuqVxdbnL+L6q4pVihaXPb5rKO7ed/T0mgWQF+bLl7eRIgH+z3oaJ1FiIfSXBZ9bbq4uhm+3/bv5WeONkJxcX79YEta+6dXPZxPf9nHBNDp4Xz7WhpibpPfr5CG0jlGyEHMyaDk6jnfnA/nm/Ph/HLiqkzqz8r935T+LC7NUvqpb3UHOWa3qNJPOaQ/i3u1rdq6EJJThp/ZV1qWg3PSYsneqVgJOZ8m2u9w/teZCkDaKfFOEwIAJJ5yTydMpXCmR+B0plK4KItQFotUnqkUrmlHoFSXSoCNEzjZKAsUbhBgaQqHsvi9i5d7eE5DlXtORLSpQjknIjUUfP5zclMG5TyJ1CAonsVxvVQvKJ7N8TyrOp4XHRdB8VJJe/YfOu4LfkULUz4AAAAASUVORK5CYII=">
 <style>
   :root {
     --bg: #f4f5f8;
@@ -101,6 +102,74 @@
   .tab:hover { color: var(--text); }
   .tab.active { background: var(--surface); color: var(--primary); box-shadow: var(--shadow-sm); }
   .actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .bell-wrap { position: relative; }
+  .bell { position: relative; }
+  .bell svg { width: 18px; height: 18px; }
+  .bell-n { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+  .bell-pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 60; width: min(360px, calc(100vw - 24px)); max-height: 70vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-lg); }
+  .bell-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); font-weight: 700; }
+  .bell-head button { border: 0; background: none; color: var(--primary); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .bell-item { display: block; width: 100%; text-align: left; padding: 10px 14px; border: 0; border-bottom: 1px solid var(--border); background: transparent; color: inherit; font: inherit; cursor: pointer; }
+  .bell-item:hover { background: var(--hover); }
+  .bell-item b { display: block; font-size: 13px; }
+  .bell-item span { display: block; font-size: 12.5px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bell-empty { padding: 18px 14px; text-align: center; color: var(--muted); font-size: 13px; }
+  .modal.wide { max-width: 1120px; }
+  .modal-split { display: flex; align-items: flex-start; }
+  .modal-split > .modal-body { flex: 1; min-width: 0; }
+  .talk { width: 400px; flex: none; display: flex; flex-direction: column; gap: 10px; padding: 18px; border-left: 1px solid var(--border); position: sticky; top: 0; max-height: calc(100vh - 80px); overflow-y: auto; align-self: stretch; }
+  .talk[hidden] { display: none; }
+  .talk .msgs { max-height: none; flex: 1; min-height: 140px; }
+  .talk-head { font-size: 15px; font-weight: 700; }
+  @media (max-width: 900px) {
+    .modal-split { flex-direction: column; align-items: stretch; }
+    .talk { width: auto; border-left: 0; border-top: 1px solid var(--border); position: static; max-height: none; }
+    .talk .msgs { max-height: 360px; }
+  }
+  .talk-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; border-radius: 10px; background: var(--primary-soft); }
+  .talk-actions .t { flex: 1; min-width: 180px; font-size: 13px; font-weight: 600; }
+  .talk .btn.btn-ok { background: #22a06b; border-color: #22a06b; color: #fff; }
+  .talk .btn.btn-ok:hover { filter: brightness(1.05); background: #22a06b; }
+  .ret-form { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; }
+  .ret-form textarea { min-height: 80px; }
+  .ret-form .row2 { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .ret-form .row2 select { flex: 1; min-width: 160px; }
+  .adj-list { display: flex; flex-direction: column; gap: 4px; }
+  .adj-title, .talk-title { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+  .adj { display: flex; align-items: flex-start; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer; }
+  .adj:hover { background: var(--hover); }
+  .talk .adj input[type="checkbox"] { margin-top: 3px; width: auto; min-height: 0; padding: 0; flex: none; accent-color: #22a06b; }
+  .adj.done .adj-t { text-decoration: line-through; color: var(--muted); }
+  .adj small { display: block; color: var(--muted); font-size: 11.5px; }
+  .msgs { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; }
+  .msg { padding: 8px 10px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); }
+  .msg.mine { background: var(--primary-soft); }
+  .msg.sys { background: transparent; border-style: dashed; }
+  .msg-h { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+  .msg-h b { color: var(--text); }
+  .msg-t { white-space: pre-wrap; word-break: break-word; font-size: 13.5px; }
+  .msg-new { display: flex; gap: 8px; align-items: flex-end; }
+  .msg-new textarea { flex: 1; min-height: 40px; }
+  .log-line { font-size: 12.5px; color: var(--muted); padding: 2px 4px; line-height: 1.4; }
+  .log-line b { color: var(--text); font-weight: 600; }
+  .log-line span { white-space: nowrap; opacity: .8; }
+  .talk-empty { font-size: 13px; color: var(--muted); }
+  .p-flags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 3px; }
+  .flag { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; }
+  .flag.adj { background: rgba(229,72,77,.14); color: var(--danger); }
+  .flag.msgc { background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+  .flag.newc { background: var(--primary); color: #fff; }
+  .user-btn { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: inherit; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .user-btn:hover { background: var(--hover); }
+  .user-btn .avatar { width: 22px; height: 22px; font-size: 10px; }
+  .users-tbl { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .user-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; }
+  .user-row .u-name { font-weight: 600; flex: 1; min-width: 120px; display: inline-flex; align-items: center; gap: 8px; }
+  .user-row .u-state { font-size: 12px; color: var(--muted); }
+  .user-row .u-state.ok { color: #22a06b; }
+  .user-row .u-admin { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+  .user-row form { display: flex; gap: 6px; flex-basis: 100%; }
+  .user-row form .input { flex: 1; }
   .sync {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 4px 10px; border-radius: 999px;
@@ -153,18 +222,21 @@
   .icon-btn:disabled:hover { background: var(--surface); }
 
   /* ---------- Campos ---------- */
-  .input, .field input, .field select, .field textarea {
+  .input, .field input, .field select, .field textarea, .talk textarea, .talk select {
     width: 100%; padding: 8px 10px;
     background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
     outline: none; transition: border-color .15s, box-shadow .15s;
   }
-  .input:focus, .field input:focus, .field select:focus, .field textarea:focus {
+  .input:focus, .field input:focus, .field select:focus, .field textarea:focus, .talk textarea:focus, .talk select:focus {
     border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft);
   }
   textarea { resize: vertical; }
   input[type="date"] { min-height: 38px; }
 
   main { padding: 24px; }
+  .test-strip { position: fixed; top: 0; left: 0; right: 0; height: 26px; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 0 12px; background: #f76b15; color: #fff; font-size: 12.5px; font-weight: 700; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.is-test { padding-top: calc(var(--header-h) + 26px); }
+  body.is-test .app-header { top: 26px; }
   #view-projects, #view-settings { max-width: 1400px; margin: 0 auto; }
 
   /* ---------- Barra de ferramentas e filtros ---------- */
@@ -781,6 +853,8 @@
     <button class="tab" role="tab" data-tab="settings">Configurações</button>
   </nav>
   <div class="actions">
+    <div class="bell-wrap"><button type="button" class="icon-btn bell" id="bellBtn" hidden title="Novidades" aria-label="Novidades"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="bell-n" id="bellN" hidden></span></button><div class="bell-pop" id="bellPop" hidden></div></div>
+    <button type="button" class="user-btn" id="userBtn" hidden title="Minha conta"><span class="avatar xs" id="userAv"></span><span id="userName"></span></button>
     <button type="button" class="sync" id="syncState" data-state="error" title="Conexão com o GitHub"><span class="dot"></span><span id="syncText">Não conectado</span></button>
     <button id="themeBtn" class="icon-btn" type="button" aria-label="Alternar tema"></button>
     <button id="newBtn" class="btn btn-primary btn-new" type="button" title="Novo projeto"><span class="plus">+</span><span class="lbl">Novo Projeto</span></button>
@@ -822,6 +896,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
     </div>
+    <div class="modal-split">
     <div class="modal-body">
       <div class="field full" id="nameField">
         <div class="name-row">
@@ -882,6 +957,8 @@
         <textarea id="f-notes" rows="3"></textarea>
       </div>
     </div>
+    <aside class="talk" id="talkBox" hidden></aside>
+    </div>
     <div class="modal-foot">
       <button type="button" class="btn btn-danger" id="deleteBtn">Excluir</button>
       <div class="spacer"></div>
@@ -891,12 +968,43 @@
   </form>
 </div>
 
+<!-- Minha conta -->
+<div id="account" class="backdrop" hidden>
+  <form class="modal confirm-box" id="accountForm" autocomplete="off" novalidate>
+    <div class="modal-head"><h2 id="accountTitle">Minha conta</h2></div>
+    <div class="modal-body">
+      <p style="margin:0 0 12px" id="accountInfo"></p>
+      <div id="accountPassBox">
+        <div class="field" style="margin-bottom:10px">
+          <label for="acc-pass">Nova senha (mínimo 4 caracteres)</label>
+          <input id="acc-pass" type="password" autocomplete="new-password">
+        </div>
+        <div class="field">
+          <label for="acc-pass2">Repita a nova senha</label>
+          <input id="acc-pass2" type="password" autocomplete="new-password">
+        </div>
+        <small class="err" id="accErr" style="display:none"></small>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn btn-danger" id="accLogout">Sair</button>
+      <div class="spacer"></div>
+      <button type="button" class="btn" id="accClose">Fechar</button>
+      <button type="submit" class="btn btn-primary" id="accSave">Trocar senha</button>
+    </div>
+  </form>
+</div>
+
 <!-- Senha para destrancar a chave -->
 <div id="unlock" class="backdrop" hidden>
   <form class="modal confirm-box" id="unlockForm" autocomplete="off" novalidate>
-    <div class="modal-head"><h2>Digite sua senha</h2></div>
+    <div class="modal-head"><h2>Entrar</h2></div>
     <div class="modal-body">
-      <p style="margin:0 0 12px">Para carregar seus projetos neste aparelho, digite a senha que você criou. Isso só é pedido uma vez em cada aparelho.</p>
+      <p style="margin:0 0 12px" id="unlockIntro">Escolha seu nome e digite sua senha. Isso só é pedido uma vez em cada aparelho.</p>
+      <div class="field" id="unlockUserField" style="margin-bottom:12px">
+        <label for="unlock-user">Usuário</label>
+        <select id="unlock-user"></select>
+      </div>
       <div class="field" id="unlockField">
         <label for="unlock-pass">Senha</label>
         <input id="unlock-pass" type="password" autocomplete="current-password">
@@ -1001,7 +1109,7 @@
      ========================================================= */
   function emptyFilters() {
     return {
-      status: { mode: 'include', selected: [] },
+      resp: { mode: 'include', selected: [] },
       priority: { mode: 'include', selected: [] },
       type: { mode: 'include', selected: [] }
     };
@@ -1067,14 +1175,23 @@
         notes: String(p.notes || ''),
         progress: normProgress(p.progress, p.statusId, out.statuses),
         createdAt: /^\d{4}-\d{2}-\d{2}$/.test(p.createdAt || '') ? p.createdAt : '',
-        completedAt: /^\d{4}-\d{2}-\d{2}$/.test(p.completedAt || '') ? p.completedAt : ''
+        completedAt: /^\d{4}-\d{2}-\d{2}$/.test(p.completedAt || '') ? p.completedAt : '',
+        comments: (Array.isArray(p.comments) ? p.comments : []).filter(function (c) { return c && c.text; }).map(function (c) {
+          var o = { id: String(c.id || ''), by: String(c.by || ''), at: String(c.at || ''), text: String(c.text), kind: c.kind ? String(c.kind) : '' };
+          if (c.f) o.f = String(c.f);
+          if (c.from !== undefined) o.from = String(c.from);
+          return o;
+        }),
+        adjustments: (Array.isArray(p.adjustments) ? p.adjustments : []).filter(function (a) { return a && a.text; }).map(function (a) {
+          return { id: String(a.id || ''), text: String(a.text), by: String(a.by || ''), at: String(a.at || ''), done: !!a.done, doneBy: String(a.doneBy || ''), doneAt: String(a.doneAt || '') };
+        })
       };
     });
     var f = emptyFilters();
     var src = (d.filters && typeof d.filters === 'object') ? d.filters : {};
     Object.keys(f).forEach(function (k) {
       var s = src[k];
-      if (s && Array.isArray(s.selected)) f[k] = { mode: s.mode === 'exclude' ? 'exclude' : 'include', selected: s.selected.slice() };
+      if (s && Array.isArray(s.selected)) f[k] = { mode: 'include', selected: s.selected.slice() };
     });
     out.filters = f;
     var so = d.sort;
@@ -1099,11 +1216,24 @@
   }
 
   /* Dados que vão para o GitHub (iguais em todo aparelho) e preferências deste aparelho */
-  var SHARED_KEYS = ['version', 'title', 'priorities', 'statuses', 'types', 'collaborators', 'projects', 'sort', 'collapsed'];
-  var LOCAL_KEYS = ['theme', 'tab', 'filters', 'statsScope'];
-  var CACHE_KEY = 'gestorProjetos.cache.v1';
-  var PREFS_KEY = 'gestorProjetos.prefs.v1';
-  var GH_KEY = 'gestorProjetos.github.v1';
+  var SHARED_KEYS = ['version', 'title', 'priorities', 'statuses', 'types', 'collaborators', 'projects', 'sort'];
+  var LOCAL_KEYS = ['theme', 'tab', 'filters', 'statsScope', 'collapsed'];
+  /* O mesmo arquivo roda no site oficial e no de teste: cada um usa nomes e dados próprios */
+  var SITE_DIR = (location.pathname.split('/').filter(Boolean)[0] || '').toLowerCase();
+  var IS_PROD = SITE_DIR === 'steincorp-projetos';
+  var KP = IS_PROD ? 'steincorpProjetos.' : 'gestorProjetos.';
+  var DEFAULT_DATA_REPO = IS_PROD ? 'steincorp-dados' : 'gestor-dados';
+  var CACHE_KEY = KP + 'cache.v1';
+  var PREFS_KEY = KP + 'prefs.v1';
+  var GH_KEY = KP + 'github.v1';
+  if (!IS_PROD) {
+    document.body.classList.add('is-test');
+    var strip = document.createElement('div');
+    strip.className = 'test-strip';
+    strip.textContent = 'AMBIENTE DE TESTE · as mudanças aqui não afetam o gestor oficial da SteinCorp';
+    document.body.insertBefore(strip, document.body.firstChild);
+    document.title = '[TESTE] ' + document.title;
+  }
   var DATA_FILE = 'dados.json';
 
   function pick(obj, keys) {
@@ -1204,16 +1334,62 @@
         { headers: { 'Accept': 'application/vnd.github.raw+json' }, cache: 'no-store' });
       if (res.status !== 200) return null;
       var j = await res.json();
-      if (!j || !j.lock || !j.lock.data || !j.repo) return null;
+      if (!j || !j.repo || !((j.lock && j.lock.data) || (j.users && Object.keys(j.users).length))) return null;
       return j;
     } catch (e) { return null; }
+  }
+
+  /* Usuários: cada colaborador pode ter a própria senha, que destranca a mesma chave */
+  function keyUsers() { return (keyFile && keyFile.users) || {}; }
+  function hasUsers() { return Object.keys(keyUsers()).length > 0; }
+  function keyAdmins() { return (keyFile && Array.isArray(keyFile.admins)) ? keyFile.admins : []; }
+  function currentUser() { return gh.cfg && gh.cfg.user ? gh.cfg.user : null; }
+  function isAdmin() {
+    if (!keyFile) return true;
+    var admins = keyAdmins();
+    if (!admins.length) return true;
+    var me = currentUser();
+    return !!me && admins.indexOf(me) >= 0;
+  }
+
+  /* Lê o chave.json mais recente, aplica a mudança e grava de volta */
+  async function updateKeyFile(token, mutate) {
+    if (!site) return { ok: false, reason: 'site' };
+    var url = 'https://api.github.com/repos/' + encodeURIComponent(site.owner) + '/' + encodeURIComponent(site.repo) + '/contents/' + KEY_FILE;
+    var headers = { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+    try {
+      var sha, body = null;
+      var cur = await fetch(url, { headers: headers, cache: 'no-store' });
+      if (cur.status === 200) {
+        var cj = await cur.json();
+        sha = cj.sha;
+        try { body = JSON.parse(fromBase64(cj.content)); } catch (e) { body = null; }
+      } else if (cur.status !== 404) return { ok: false, reason: cur.status };
+      body = body || {};
+      body.owner = body.owner || gh.cfg.owner; body.repo = body.repo || gh.cfg.repo;
+      mutate(body);
+      var put = { message: 'Atualiza chaves de acesso', content: toBase64(JSON.stringify(body, null, 2)) };
+      if (sha) put.sha = sha;
+      var res = await fetch(url, { method: 'PUT', headers: Object.assign({ 'Content-Type': 'application/json' }, headers), body: JSON.stringify(put), cache: 'no-store' });
+      if (res.status === 200 || res.status === 201) { keyFile = body; return { ok: true }; }
+      return { ok: false, reason: res.status };
+    } catch (e) { return { ok: false, reason: 'net' }; }
+  }
+  var FIRST_PASS = '0303';
+  async function setUserPass(token, userId, name, pass, mustChange) {
+    var lock = await lockToken(token, pass);
+    return updateKeyFile(token, function (b) {
+      b.users = b.users || {};
+      b.users[userId] = { name: name, lock: lock };
+      if (mustChange) b.users[userId].mustChange = true;
+    });
   }
 
   /* Grava o chave.json no repositório do site (precisa que a chave tenha acesso a ele) */
   async function saveKeyFile(token, pass) {
     if (!site) return { ok: false, reason: 'site' };
     var lock = await lockToken(token, pass);
-    var body = { owner: gh.cfg.owner, repo: gh.cfg.repo, lock: lock };
+    var body = Object.assign({}, keyFile || {}, { owner: gh.cfg.owner, repo: gh.cfg.repo, lock: lock });
     var url = 'https://api.github.com/repos/' + encodeURIComponent(site.owner) + '/' + encodeURIComponent(site.repo) + '/contents/' + KEY_FILE;
     var headers = { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
     try {
@@ -1318,13 +1494,15 @@
     if (json === sharedJSON(state)) return;
     SHARED_KEYS.forEach(function (k) { state[k] = incoming[k]; });
     purgeRefs();
+    takeSnap();
     writeLocal(CACHE_KEY, pick(state, SHARED_KEYS));
-    if (document.activeElement !== appTitle) { appTitle.textContent = state.title; document.title = state.title; }
+    if (document.activeElement !== appTitle) { appTitle.textContent = state.title; document.title = (IS_PROD ? '' : '[TESTE] ') + state.title; }
     refreshData();
     if (!settingsEl.contains(document.activeElement)) renderSettings();
   }
 
   function save() {
+    scheduleLog();
     writeLocal(PREFS_KEY, pick(state, LOCAL_KEYS));
     writeLocal(CACHE_KEY, pick(state, SHARED_KEYS));
     if (!gh.ready || gh.conflict) return;
@@ -1399,10 +1577,10 @@
   });
 
   var state = load();
-  var ui = { search: '', openFilter: null, respOpen: false, ghSetup: false, ghPass: null };
+  var ui = { search: '', openFilter: null, respOpen: false, ghSetup: false, ghPass: null, userPass: null };
 
   var FILTERS = [
-    { key: 'status', label: 'Status', list: 'statuses', field: 'statusId' },
+    { key: 'resp', label: 'Colaborador', list: 'collaborators', field: 'responsibles' },
     { key: 'priority', label: 'Prioridade', list: 'priorities', field: 'priorityId' },
     { key: 'type', label: 'Disciplina', list: 'types', field: 'typeIds' }
   ];
@@ -1531,7 +1709,7 @@
   function setTitleFromEl() {
     var t = appTitle.textContent.replace(/\s+/g, ' ').trim();
     state.title = t || DEFAULT_TITLE;
-    document.title = state.title;
+    document.title = (IS_PROD ? '' : '[TESTE] ') + state.title;
     save();
   }
   appTitle.addEventListener('input', setTitleFromEl);
@@ -1567,6 +1745,11 @@
   });
 
   function showTab() {
+    var adm = isAdmin();
+    var setTab = $('.tab[data-tab="settings"]');
+    if (setTab) setTab.hidden = !adm;
+    if (!adm && state.tab === 'settings') state.tab = 'projects';
+    renderUserBtn(); renderBell();
     $$('.tab').forEach(function (b) {
       var on = b.dataset.tab === state.tab;
       b.classList.toggle('active', on);
@@ -1658,7 +1841,7 @@
   function filteredProjects() {
     var q = norm(ui.search.trim());
     return state.projects.filter(function (p) {
-      return passFilter('status', p.statusId) && passFilter('priority', p.priorityId) &&
+      return passFilter('resp', p.responsibles) && passFilter('priority', p.priorityId) &&
         passFilter('type', p.typeIds) && matchSearch(p, q);
     });
   }
@@ -1680,9 +1863,6 @@
       }).join('') || '<div class="multi-empty">Nenhum item cadastrado.</div>';
       return '<div class="filter-sec mode-' + f.mode + '" data-key="' + def.key + '">' +
         '<div class="fs-title"><span>' + def.label + '</span>' + badge + '</div>' +
-        '<div class="seg"><button type="button" data-f="mode" data-mode="include" class="' + (f.mode === 'include' ? 'on' : '') + '">Incluir</button>' +
-        '<button type="button" data-f="mode" data-mode="exclude" class="' + (f.mode === 'exclude' ? 'on' : '') + '">Excluir</button></div>' +
-        '<p class="hint">' + (f.mode === 'include' ? 'Mostra só os marcados.' : 'Mostra tudo, exceto os marcados.') + '</p>' +
         '<div class="opts">' + opts + '</div>' +
         '<div class="fs-links"><button type="button" data-f="all">Todos</button><button type="button" data-f="none">Nenhum</button>' +
         (n ? '<button type="button" class="danger" data-f="clear">Limpar</button>' : '') + '</div>' +
@@ -1811,7 +1991,7 @@
     var sub = isDone(p) ? '' : (p.notes || p.desc || '');
     return '<div class="row" data-id="' + esc(p.id) + '" tabindex="0" style="--row-color:' + esc(color) + '">' +
       '<div class="cell handle" title="Arraste para mover">' + ICON.grip + '</div>' +
-      '<div class="cell c-name"><div class="p-name">' + esc(p.name) + '</div>' + (sub ? '<div class="p-desc">' + esc(sub) + '</div>' : '') + '</div>' +
+      '<div class="cell c-name"><div class="p-name">' + esc(p.name) + '</div>' + (sub ? '<div class="p-desc">' + esc(sub) + '</div>' : '') + flagsHTML(p) + '</div>' +
       '<div class="cell fill c-prio" data-label="Prioridade" tabindex="0" role="button" title="Clique para mudar a prioridade">' + pill(pr, 'Sem prioridade') + '</div>' +
       '<div class="cell c-due" data-label="Prazo" tabindex="0" role="button" title="Clique para mudar o prazo">' + dueHTML(p) + '</div>' +
       '<div class="cell c-prog" data-label="Andamento" tabindex="0" role="button" title="Clique para mudar o andamento">' + progHTML(p.progress) + '</div>' +
@@ -1850,9 +2030,6 @@
     var groups = state.statuses.map(function (s) { return { id: s.id, name: s.name, color: s.color }; });
     if (state.projects.some(function (p) { return !byId(state.statuses, p.statusId); }) || !groups.length) {
       groups.push({ id: '', name: 'Sem status', color: '#8b95a7' });
-    }
-    if (state.filters.status.selected.length) {
-      groups = groups.filter(function (g) { return passFilter('status', g.id); });
     }
     var filtering = anyFilterActive() || !!ui.search.trim();
     if (!groups.length) {
@@ -2041,7 +2218,7 @@
     return '<div class="card" data-id="' + esc(p.id) + '" tabindex="0" style="--c:' + esc(pr ? pr.color : 'var(--border)') + '">' +
       '<div class="card-top"><span class="card-title">' + esc(p.name) + '</span><span class="card-grip" title="Arraste para mover">' + ICON.grip + '</span></div>' +
       (p.desc ? '<div class="card-desc">' + esc(p.desc) + '</div>' : '') +
-      '<div class="card-meta">' + pill(pr, 'Sem prioridade', 'sm') + typesHTML(p, '') + '</div>' +
+      '<div class="card-meta">' + pill(pr, 'Sem prioridade', 'sm') + typesHTML(p, '') + '</div>' + flagsHTML(p) +
       '<div class="card-prog" title="Andamento">' + progHTML(p.progress) + '</div>' +
       '<div class="card-foot">' + dueHTML(p) + avatarsHTML(p.responsibles, false) + '</div>' +
       '</div>';
@@ -2302,7 +2479,7 @@
         (keyFile ? ' Nos outros aparelhos, basta abrir o site e digitar sua senha.' : '') + '</p>' +
         '<div class="gh-actions">' +
         '<button type="button" class="btn sm" data-action="gh-reload">Recarregar do GitHub</button>' +
-        '<button type="button" class="btn sm" data-action="gh-newpass">' + (keyFile ? 'Trocar senha' : 'Criar senha para outros aparelhos') + '</button>' +
+        '<button type="button" class="btn sm" data-action="gh-newpass">' + (keyFile ? 'Trocar senha da empresa' : 'Criar senha da empresa') + '</button>' +
         '<button type="button" class="btn sm" data-action="gh-newkey">Trocar chave de acesso</button>' +
         '<button type="button" class="btn btn-danger sm" data-action="gh-disconnect">Desconectar este aparelho</button>' +
         '</div>' + passForm() + '</div>';
@@ -2317,7 +2494,7 @@
       '<form class="gh-form" id="ghForm" autocomplete="off">' +
       '<div class="add-row">' +
       '<label style="flex:1">Usuário do GitHub<input class="input" id="gh-owner" value="' + esc(c.owner || (site ? site.owner : '')) + '" placeholder="ex.: israelbraz" spellcheck="false"></label>' +
-      '<label style="flex:1">Repositório de dados<input class="input" id="gh-repo" value="' + esc(c.repo || 'gestor-dados') + '" spellcheck="false"></label>' +
+      '<label style="flex:1">Repositório de dados<input class="input" id="gh-repo" value="' + esc(c.repo || DEFAULT_DATA_REPO) + '" spellcheck="false"></label>' +
       '</div>' +
       '<label>Chave de acesso (token)<input class="input" id="gh-token" type="password" placeholder="github_pat_..." spellcheck="false" autocomplete="off"></label>' +
       (site
@@ -2369,7 +2546,41 @@
 
   function renderSettings() {
     closePop();
-    settingsEl.innerHTML = githubPanel() + LISTS.map(listPanel).join('') + colabPanel() + dataPanel();
+    showTab();
+    if (!isAdmin()) { settingsEl.innerHTML = ''; return; }
+    settingsEl.innerHTML = githubPanel() + (ghConfigured() && site ? usersPanel() : '') + LISTS.map(listPanel).join('') + dataPanel();
+  }
+
+  function usersPanel() {
+    var users = keyUsers(), admins = keyAdmins(), me = currentUser();
+    var ids = state.collaborators.map(function (c) { return c.id; });
+    var rows = state.collaborators.map(function (c) {
+      var u = users[c.id];
+      var n = state.projects.filter(function (p) { return p.responsibles.indexOf(c.id) >= 0; }).length;
+      var st = !u ? 'Sem acesso' : (u.mustChange ? 'Senha inicial (0303)' : 'Ativo');
+      return '<div class="user-row" data-uid="' + esc(c.id) + '">' +
+        '<span class="u-name"><button type="button" class="avatar xs" data-action="colab-color" style="background:' + esc(c.color) + ';border:0;cursor:pointer" title="Escolher cor">' + esc(initials(c.name)) + '</button>' + esc(c.name) + (c.id === me ? ' <span class="u-state">(você)</span>' : '') + '</span>' +
+        '<span class="u-state' + (u && !u.mustChange ? ' ok' : '') + '">' + st + ' · ' + n + ' proj.</span>' +
+        (u ? '<label class="u-admin"><input type="checkbox" data-uadmin' + (admins.indexOf(c.id) >= 0 ? ' checked' : '') + '> Administrador</label>' : '') +
+        (u ? (c.id !== me ? '<button type="button" class="btn sm" data-action="u-reset">Redefinir senha</button>' : '')
+           : '<button type="button" class="btn sm" data-action="u-grant">Liberar acesso</button>') +
+        (c.id !== me ? '<button type="button" class="btn btn-danger sm" data-action="u-delete">Remover usuário</button>' : '') +
+        '</div>';
+    }).join('');
+    var orphans = Object.keys(users).filter(function (id) { return ids.indexOf(id) < 0; }).map(function (id) {
+      return '<div class="user-row" data-uid="' + esc(id) + '"><span class="u-name">' + esc(users[id].name || 'Usuário removido') + '</span><span class="u-state">acesso sobrando</span>' +
+        '<button type="button" class="btn btn-danger sm" data-action="u-remove">Apagar acesso</button></div>';
+    }).join('');
+    var legacy = keyFile && keyFile.lock;
+    return '<div class="panel" data-users><h3>Usuários</h3>' +
+      '<p class="sub">Os usuários são as pessoas da equipe e aparecem como Responsáveis nos projetos. Um usuário novo, ou com a senha redefinida, entra com a senha <b>0303</b> e escolhe a própria senha no primeiro acesso. Só administradores veem Configurações.</p>' +
+      '<div class="users-tbl">' + (rows || '<div class="items-empty">Nenhum usuário ainda.</div>') + orphans + '</div>' +
+      '<form class="add-row" data-action="u-add" style="margin-top:12px">' +
+      '<input class="input" name="name" placeholder="Nome do novo usuário" maxlength="60" aria-label="Nome do novo usuário">' +
+      '<button type="submit" class="btn btn-primary sm">Adicionar usuário</button></form>' +
+      (legacy ? '<div class="gh-status error" style="margin-top:12px">A senha única da empresa ainda funciona. Depois que todos tiverem o próprio acesso, desative-a.' +
+        (admins.length ? ' <button type="button" class="btn btn-danger sm" data-action="u-legacy-off" style="margin-left:8px">Desativar senha da empresa</button>' : '') + '</div>' : '') +
+      '</div>';
   }
 
   function listDef(key) { return LISTS.filter(function (d) { return d.key === key; })[0]; }
@@ -2378,11 +2589,61 @@
     var btn = e.target.closest('button[data-action]');
     if (!btn) return;
     var action = btn.dataset.action;
-    var li = btn.closest('.item');
+    var li = btn.closest('.item') || btn.closest('.user-row');
     var panel = btn.closest('[data-list]');
     var key = panel ? panel.dataset.list : null;
-    var id = li ? li.dataset.id : null;
+    var id = li ? (li.dataset.id || li.dataset.uid) : null;
 
+    var urow = btn.closest('.user-row');
+    if (urow && (action === 'u-grant' || action === 'u-reset')) {
+      var uidg = urow.dataset.uid, cg = byId(state.collaborators, uidg);
+      var go = function () {
+        btn.disabled = true;
+        setUserPass(gh.cfg.token, uidg, cg ? cg.name : '', FIRST_PASS, true).then(function (r) {
+          toast(r.ok ? (action === 'u-reset' ? 'Senha de ' + cg.name + ' voltou para 0303.' : 'Acesso liberado. ' + cg.name + ' entra com a senha 0303.') : 'Não consegui salvar agora. Tente de novo.');
+          renderSettings();
+        });
+      };
+      if (action === 'u-reset') {
+        confirmBox('Redefinir a senha de ' + (cg ? cg.name : 'usuário') + '?', 'A senha volta a ser 0303 e ele escolhe uma nova no próximo acesso.', 'Redefinir').then(function (ok) { if (ok) go(); });
+      } else go();
+      return;
+    }
+    if (urow && action === 'u-delete') {
+      var uidd = urow.dataset.uid, cd = byId(state.collaborators, uidd);
+      if (!cd) return;
+      var nd = state.projects.filter(function (p) { return p.responsibles.indexOf(uidd) >= 0; }).length;
+      confirmBox('Remover o usuário ' + cd.name + '?', 'Ele perde o acesso ao gestor' + (nd ? ' e sai de responsável em ' + nd + ' projeto(s)' : '') + '. Os projetos continuam.', 'Remover').then(function (ok) {
+        if (!ok) return;
+        state.collaborators = state.collaborators.filter(function (x) { return x.id !== uidd; });
+        purgeRefs(); save(); refreshData();
+        updateKeyFile(gh.cfg.token, function (b) {
+          if (b.users) delete b.users[uidd];
+          if (Array.isArray(b.admins)) b.admins = b.admins.filter(function (x) { return x !== uidd; });
+        }).then(function (r) { toast(r.ok ? 'Usuário removido.' : 'Usuário removido da lista, mas não consegui apagar o acesso agora. Use "Apagar acesso".'); renderSettings(); });
+      });
+      return;
+    }
+    if (urow && action === 'u-remove') {
+      var uid0 = urow.dataset.uid;
+      var nm = (keyUsers()[uid0] || {}).name || 'este usuário';
+      confirmBox('Apagar o acesso de ' + nm + '?', 'A senha dele deixa de funcionar.', 'Apagar').then(function (ok) {
+        if (!ok) return;
+        updateKeyFile(gh.cfg.token, function (b) {
+          if (b.users) delete b.users[uid0];
+          if (Array.isArray(b.admins)) b.admins = b.admins.filter(function (x) { return x !== uid0; });
+        }).then(function (r) { toast(r.ok ? 'Acesso removido.' : 'Não consegui salvar agora. Tente de novo.'); renderSettings(); });
+      });
+      return;
+    }
+    if (action === 'u-legacy-off') {
+      confirmBox('Desativar a senha da empresa?', 'Depois disso, só entra quem tem usuário e senha próprios. Quem já está conectado continua conectado até sair.', 'Desativar').then(function (ok) {
+        if (!ok) return;
+        updateKeyFile(gh.cfg.token, function (b) { delete b.lock; })
+          .then(function (r) { toast(r.ok ? 'Senha da empresa desativada.' : 'Não consegui salvar agora. Tente de novo.'); renderSettings(); });
+      });
+      return;
+    }
     if (action === 'color') {
       var item = byId(state[key], id);
       if (!item) return;
@@ -2506,9 +2767,44 @@
       if (c) input.value = c.name;
     }
   });
+  settingsEl.addEventListener('change', function (e) {
+    var cb = e.target.closest('[data-uadmin]');
+    if (!cb) return;
+    var uid1 = cb.closest('.user-row').dataset.uid;
+    var on = cb.checked;
+    if (!on && uid1 === currentUser() && keyAdmins().length === 1) {
+      cb.checked = true; toast('Precisa ter pelo menos um administrador.'); return;
+    }
+    updateKeyFile(gh.cfg.token, function (b) {
+      var a = Array.isArray(b.admins) ? b.admins.slice() : [];
+      var i = a.indexOf(uid1);
+      if (on && i < 0) a.push(uid1);
+      if (!on && i >= 0) a.splice(i, 1);
+      b.admins = a;
+    }).then(function (r) {
+      if (!r.ok) { toast('Não consegui salvar agora. Tente de novo.'); }
+      showTab(); renderSettings();
+    });
+  });
   settingsEl.addEventListener('submit', function (e) {
     e.preventDefault();
     var f = e.target;
+    if (f.dataset.action === 'u-add') {
+      var nin = f.querySelector('[name="name"]');
+      var nn = nin.value.trim();
+      if (!nn) { nin.focus(); return; }
+      if (state.collaborators.some(function (c) { return norm(c.name) === norm(nn); })) { toast('Já existe um usuário com esse nome.'); nin.focus(); return; }
+      var nc = { id: uid(), name: nn, role: '', color: nextColor(state.collaborators) };
+      state.collaborators.push(nc);
+      save(); refreshData();
+      f.querySelector('button').disabled = true;
+      setUserPass(gh.cfg.token, nc.id, nn, FIRST_PASS, true).then(function (r) {
+        toast(r.ok ? nn + ' adicionado. Primeiro acesso com a senha 0303.' : nn + ' adicionado, mas não consegui liberar o acesso agora. Clique em "Liberar acesso".');
+        renderSettings();
+        var again = settingsEl.querySelector('[data-users] form input'); if (again) again.focus();
+      });
+      return;
+    }
     if (f.id === 'ghForm') {
       (async function () {
         var owner = $('#gh-owner').value.trim().replace(/^@/, '');
@@ -2605,6 +2901,7 @@
         if (!data || !Array.isArray(data.projects)) throw new Error('formato');
         var prefs = pick(state, LOCAL_KEYS);
         state = normalize(Object.assign({}, data, prefs));
+        takeSnap();
         state.tab = 'settings';
         purgeRefs(); save(); renderAll();
         toast(gh.ready ? 'Backup importado. Salvando no GitHub…' : 'Backup importado neste navegador. Conecte o GitHub para salvar lá.');
@@ -2909,6 +3206,306 @@
     sel.value = byId(list, value) ? value : '';
   }
 
+  /* =========================================================
+     Histórico automático: registra quem mudou o quê
+     ========================================================= */
+  var snap = {}, logTimer = null, skipStatusLog = {};
+  function snapOf(p) {
+    return { name: p.name, statusId: p.statusId, priorityId: p.priorityId, deadline: p.deadline, progress: p.progress,
+      responsibles: p.responsibles.slice(), typeIds: p.typeIds.slice(), desc: p.desc, notes: p.notes, client: p.client, location: p.location };
+  }
+  function takeSnap() {
+    snap = {};
+    state.projects.forEach(function (p) { snap[p.id] = snapOf(p); });
+  }
+  function scheduleLog() {
+    clearTimeout(logTimer);
+    logTimer = setTimeout(function () { if (logChanges()) save(); }, 900);
+  }
+  function nameIn(list, id, empty) { var x = byId(list, id); return x ? x.name : empty; }
+  function fmtDate(d) { if (!d) return ''; var a = d.split('-'); return a.length === 3 ? a[2] + '/' + a[1] + '/' + a[0] : d; }
+  function pushLog(p, text, f, from) {
+    var me = currentUser() || '';
+    var last = p.comments && p.comments[p.comments.length - 1];
+    if (f === 'progress' && last && last.kind === 'log' && last.f === 'progress' && last.by === me && (Date.now() - new Date(last.at).getTime()) < 10 * 60000) {
+      if (String(last.from) === String(p.progress)) { p.comments.pop(); return; }
+      last.text = 'Mudou o andamento de ' + last.from + '% para ' + p.progress + '%.';
+      last.at = nowISO();
+      return;
+    }
+    p.comments = p.comments || [];
+    var c = { id: uid(), by: me, at: nowISO(), text: text, kind: 'log' };
+    if (f) c.f = f;
+    if (from !== undefined) c.from = String(from);
+    p.comments.push(c);
+  }
+  function logChanges() {
+    var changed = false;
+    state.projects.forEach(function (p) {
+      var o = snap[p.id];
+      if (!o) { pushLog(p, 'Criou o projeto.'); changed = true; return; }
+      var stChanged = o.statusId !== p.statusId;
+      if (stChanged && !skipStatusLog[p.id]) {
+        pushLog(p, 'Mudou o status de ' + nameIn(state.statuses, o.statusId, 'Sem status') + ' para ' + nameIn(state.statuses, p.statusId, 'Sem status') + '.'); changed = true;
+      }
+      if (o.priorityId !== p.priorityId && !(stChanged && clearsPriority(p.statusId) && p.priorityId === noPriorityId())) {
+        pushLog(p, 'Mudou a prioridade de ' + nameIn(state.priorities, o.priorityId, 'Sem prioridade') + ' para ' + nameIn(state.priorities, p.priorityId, 'Sem prioridade') + '.'); changed = true;
+      }
+      if (o.progress !== p.progress && !(stChanged && isDoneStatus(p.statusId) && p.progress === 100)) {
+        pushLog(p, 'Mudou o andamento de ' + o.progress + '% para ' + p.progress + '%.', 'progress', o.progress); changed = true;
+      }
+      if (o.deadline !== p.deadline) {
+        pushLog(p, !o.deadline ? 'Definiu o prazo para ' + fmtDate(p.deadline) + '.' : (!p.deadline ? 'Removeu o prazo (era ' + fmtDate(o.deadline) + ').' : 'Mudou o prazo de ' + fmtDate(o.deadline) + ' para ' + fmtDate(p.deadline) + '.')); changed = true;
+      }
+      var addR = p.responsibles.filter(function (x) { return o.responsibles.indexOf(x) < 0; });
+      var remR = o.responsibles.filter(function (x) { return p.responsibles.indexOf(x) < 0; });
+      if (addR.length) { pushLog(p, 'Adicionou ' + addR.map(whoName).join(', ') + ' como responsável.'); changed = true; }
+      if (remR.length) { pushLog(p, 'Tirou ' + remR.map(whoName).join(', ') + ' dos responsáveis.'); changed = true; }
+      if (o.typeIds.join(',') !== p.typeIds.join(',')) {
+        var ts = p.typeIds.map(function (id) { return nameIn(state.types, id, ''); }).filter(Boolean);
+        pushLog(p, ts.length ? 'Mudou as disciplinas para ' + ts.join(', ') + '.' : 'Tirou todas as disciplinas.'); changed = true;
+      }
+      if (o.name !== p.name) { pushLog(p, 'Renomeou de "' + o.name + '" para "' + p.name + '".'); changed = true; }
+      var edits = [];
+      if (o.desc !== p.desc) edits.push('a descrição');
+      if (o.notes !== p.notes) edits.push('as observações');
+      if (o.client !== p.client) edits.push('o cliente');
+      if (o.location !== p.location) edits.push('o local');
+      if (edits.length) { pushLog(p, 'Editou ' + edits.join(', ').replace(/, ([^,]*)$/, ' e $1') + '.'); changed = true; }
+    });
+    skipStatusLog = {};
+    takeSnap();
+    if (changed) {
+      if (!modalEl.hidden && editingId) renderTalk();
+      refreshData();
+    }
+    return changed;
+  }
+
+  /* =========================================================
+     Conversa, ajustes e novidades
+     ========================================================= */
+  function nowISO() { return new Date().toISOString(); }
+  function whoName(id) {
+    if (!id) return 'Alguém';
+    var c = byId(state.collaborators, id);
+    if (c) return c.name;
+    var u = keyUsers()[id];
+    return u && u.name ? u.name : 'Ex-usuário';
+  }
+  function fmtWhen(iso) {
+    var d = new Date(iso);
+    if (isNaN(d)) return '';
+    return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function isConfStatus(statusId) {
+    var st = byId(state.statuses, statusId);
+    return !!st && norm(st.name).indexOf('confer') >= 0;
+  }
+  function confStatusId() { var st = state.statuses.filter(function (x) { return norm(x.name).indexOf('confer') >= 0; })[0]; return st ? st.id : ''; }
+  function doneStatusId() { var st = state.statuses.filter(function (x) { return isDoneStatus(x.id); })[0]; return st ? st.id : ''; }
+  function pendingAdj(p) { return (p.adjustments || []).filter(function (a) { return !a.done; }).length; }
+  function addComment(p, text, kind) {
+    p.comments = p.comments || [];
+    p.comments.push({ id: uid(), by: currentUser() || '', at: nowISO(), text: text, kind: kind || '' });
+  }
+  function flagsHTML(p) {
+    var n = pendingAdj(p), c = (p.comments || []).filter(function (m) { return m.kind !== 'sys' && m.kind !== 'log'; }).length;
+    var nw = hasNews(p);
+    if (!n && !c && !nw) return '';
+    return '<div class="p-flags">' +
+      (n ? '<span class="flag adj" title="Ajustes pendentes">⚠ ' + n + ' ajuste' + (n > 1 ? 's' : '') + '</span>' : '') +
+      (nw ? '<span class="flag newc" title="Mensagem nova">● novo</span>' : (c ? '<span class="flag msgc" title="Mensagens">💬 ' + c + '</span>' : '')) +
+      '</div>';
+  }
+
+  /* O que cada usuário já viu (guardado neste aparelho) */
+  function seenKey() { return KP + 'seen.' + (currentUser() || '_'); }
+  function seenMap() {
+    var m = readLocal(seenKey());
+    if (!m || typeof m !== 'object') { m = { since: nowISO(), p: {} }; writeLocal(seenKey(), m); }
+    m.p = m.p || {};
+    return m;
+  }
+  function markSeen(pid) {
+    if (!currentUser()) return;
+    var m = seenMap(); m.p[pid] = nowISO(); writeLocal(seenKey(), m);
+  }
+  function lastOtherMsg(p) {
+    var me = currentUser();
+    var list = (p.comments || []).filter(function (c) { return c.by !== me && c.kind !== 'log'; });
+    return list.length ? list[list.length - 1] : null;
+  }
+  function involved(p) {
+    var me = currentUser();
+    return p.responsibles.indexOf(me) >= 0 || (p.comments || []).some(function (c) { return c.by === me; });
+  }
+  function hasNews(p) {
+    var me = currentUser();
+    if (!me || !involved(p)) return false;
+    var last = lastOtherMsg(p);
+    if (!last) return false;
+    var m = seenMap();
+    var ref = m.p[p.id] || m.since;
+    return last.at > ref;
+  }
+  var bellOpen = false;
+  function renderBell() {
+    var btn = $('#bellBtn');
+    if (!btn) return;
+    var me = currentUser();
+    btn.hidden = !(me && ghConfigured());
+    if (btn.hidden) { $('#bellPop').hidden = true; return; }
+    seenMap();
+    var news = state.projects.filter(hasNews).sort(function (a, b) { return lastOtherMsg(b).at.localeCompare(lastOtherMsg(a).at); });
+    var nEl = $('#bellN');
+    nEl.hidden = !news.length; nEl.textContent = news.length;
+    var pop = $('#bellPop');
+    pop.hidden = !bellOpen;
+    if (!bellOpen) return;
+    pop.innerHTML = '<div class="bell-head"><span>Novidades</span>' + (news.length ? '<button type="button" data-bell-all>Marcar tudo como visto</button>' : '') + '</div>' +
+      (news.length ? news.map(function (p) {
+        var m = lastOtherMsg(p);
+        return '<button type="button" class="bell-item" data-bell="' + esc(p.id) + '"><b>' + esc(p.name) + '</b><span>' + esc(whoName(m.by)) + ': ' + esc(m.text) + '</span><span>' + fmtWhen(m.at) + '</span></button>';
+      }).join('') : '<div class="bell-empty">Nada novo por aqui.</div>');
+  }
+  $('#bellBtn').addEventListener('click', function (e) { e.stopPropagation(); bellOpen = !bellOpen; renderBell(); });
+  $('#bellPop').addEventListener('click', function (e) {
+    var all = e.target.closest('[data-bell-all]');
+    if (all) { state.projects.filter(hasNews).forEach(function (p) { markSeen(p.id); }); bellOpen = false; renderBell(); refreshData(); return; }
+    var it = e.target.closest('[data-bell]');
+    if (it) { bellOpen = false; renderBell(); openProject(it.dataset.bell); }
+  });
+  document.addEventListener('pointerdown', function (e) {
+    if (bellOpen && !e.target.closest('.bell-wrap')) { bellOpen = false; renderBell(); }
+  });
+
+  /* Seção de conversa dentro da ficha do projeto */
+  var talkUi = { ret: false };
+  function syncStatusFields(p) {
+    fStatus.value = p.statusId;
+    if (fPriority && byId(state.priorities, p.priorityId) !== undefined) fPriority.value = p.priorityId;
+    $('#f-progress').value = p.progress; $('#f-progress-range').value = p.progress; paintRange($('#f-progress-range'));
+  }
+  function renderTalk() {
+    var box = $('#talkBox');
+    var p = editingId ? byId(state.projects, editingId) : null;
+    form.classList.toggle('wide', !!p);
+    if (!p) { box.hidden = true; box.innerHTML = ''; return; }
+    box.hidden = false;
+    var me = currentUser();
+    var html = '<div class="talk-head">Conversa e ajustes</div>';
+    if (isConfStatus(p.statusId)) {
+      html += '<div class="talk-actions"><span class="t">Este projeto está em conferência.</span>' +
+        '<button type="button" class="btn btn-ok sm" data-talk="approve">Aprovar</button>' +
+        '<button type="button" class="btn btn-danger sm" data-talk="ret-open">Devolver com ajustes</button></div>';
+      if (talkUi.ret) {
+        var opts = state.statuses.filter(function (x) { return !isConfStatus(x.id) && !isDoneStatus(x.id); });
+        var def = opts.filter(function (x) { return norm(x.name).indexOf('andamento') >= 0; })[0] || opts[0];
+        html += '<div class="ret-form"><span class="adj-title">O que precisa ser ajustado? (um item por linha)</span>' +
+          '<textarea id="ret-text" placeholder="Ex.: Pilar P3 sem armadura de espera"></textarea>' +
+          '<div class="row2"><span class="adj-title">Voltar para</span><select id="ret-status">' + opts.map(function (x) {
+            return '<option value="' + esc(x.id) + '"' + (def && def.id === x.id ? ' selected' : '') + '>' + esc(x.name) + '</option>';
+          }).join('') + '</select>' +
+          '<button type="button" class="btn sm" data-talk="ret-cancel">Cancelar</button>' +
+          '<button type="button" class="btn btn-danger sm" data-talk="ret-send">Devolver</button></div></div>';
+      }
+    }
+    var adjs = p.adjustments || [];
+    if (adjs.length) {
+      var pend = adjs.filter(function (a) { return !a.done; }).length;
+      html += '<div><div class="adj-title">Ajustes (' + (adjs.length - pend) + ' de ' + adjs.length + ' feitos)</div><div class="adj-list">' +
+        adjs.map(function (a) {
+          return '<label class="adj' + (a.done ? ' done' : '') + '"><input type="checkbox" data-adj="' + esc(a.id) + '"' + (a.done ? ' checked' : '') + '>' +
+            '<span><span class="adj-t">' + esc(a.text) + '</span><small>Pedido por ' + esc(whoName(a.by)) + ' em ' + fmtWhen(a.at) +
+            (a.done ? ' · feito por ' + esc(whoName(a.doneBy)) + ' em ' + fmtWhen(a.doneAt) : '') + '</small></span></label>';
+        }).join('') + '</div>' +
+        (!pend ? '<button type="button" class="btn sm" data-talk="adj-clear" style="margin-top:6px">Limpar ajustes feitos</button>' : '') + '</div>';
+    }
+    var msgs = p.comments || [];
+    html += '<div class="talk-title">Mensagens e histórico</div>' +
+      '<div class="msgs" id="talkMsgs">' + (msgs.length ? msgs.map(function (m) {
+        if (m.kind === 'log') return '<div class="log-line"><b>' + esc(whoName(m.by)) + '</b> ' + esc(m.text.charAt(0).toLowerCase() + m.text.slice(1)) + ' <span>' + fmtWhen(m.at) + '</span></div>';
+        return '<div class="msg' + (m.kind === 'sys' ? ' sys' : (m.by && m.by === me ? ' mine' : '')) + '"><div class="msg-h"><b>' + esc(whoName(m.by)) + '</b>' + fmtWhen(m.at) + '</div><div class="msg-t">' + esc(m.text) + '</div></div>';
+      }).join('') : '<div class="talk-empty">Nenhuma mensagem ainda.</div>') + '</div>' +
+      '<div class="msg-new"><textarea id="talk-text" rows="1" placeholder="Escreva uma mensagem…"></textarea><button type="button" class="btn btn-primary sm" data-talk="send">Enviar</button></div>';
+    box.innerHTML = html;
+    var ml = $('#talkMsgs'); if (ml) ml.scrollTop = ml.scrollHeight;
+    var tt = $('#talk-text'); if (tt) { tt.classList.add('autogrow'); tt.addEventListener('input', function () { autoGrow(tt); }); }
+  }
+  function talkChanged(p, msg) {
+    markSeen(p.id);
+    save(); refreshData(); renderTalk();
+    if (msg) toast(msg);
+  }
+  $('#talkBox').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-talk]');
+    if (!b) return;
+    var p = editingId ? byId(state.projects, editingId) : null;
+    if (!p) return;
+    var a = b.dataset.talk;
+    if (a === 'send') {
+      var t = $('#talk-text').value.trim();
+      if (!t) { $('#talk-text').focus(); return; }
+      addComment(p, t);
+      talkChanged(p);
+      var t2 = $('#talk-text'); if (t2) t2.focus();
+    } else if (a === 'approve') {
+      var done = doneStatusId();
+      if (!done) { toast('Crie um status "Concluído" em Configurações.'); return; }
+      skipStatusLog[p.id] = true;
+      changeStatus(p, done);
+      addComment(p, 'Aprovou o projeto. Movido para ' + byId(state.statuses, done).name + '.', 'sys');
+      syncStatusFields(p);
+      talkUi.ret = false;
+      talkChanged(p, 'Projeto aprovado.');
+    } else if (a === 'ret-open') {
+      talkUi.ret = true; renderTalk(); var rt = $('#ret-text'); if (rt) rt.focus();
+    } else if (a === 'ret-cancel') {
+      talkUi.ret = false; renderTalk();
+    } else if (a === 'ret-send') {
+      var lines = $('#ret-text').value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+      if (!lines.length) { $('#ret-text').focus(); toast('Escreva pelo menos um ajuste.'); return; }
+      var to = $('#ret-status').value;
+      var me = currentUser() || '', at = nowISO();
+      p.adjustments = (p.adjustments || []).concat(lines.map(function (x) { return { id: uid(), text: x, by: me, at: at, done: false, doneBy: '', doneAt: '' }; }));
+      skipStatusLog[p.id] = true;
+      changeStatus(p, to);
+      addComment(p, 'Devolveu com ' + lines.length + ' ajuste' + (lines.length > 1 ? 's' : '') + ':\n' + lines.map(function (x) { return '• ' + x; }).join('\n') + '\nVoltou para ' + byId(state.statuses, to).name + '.', 'sys');
+      syncStatusFields(p);
+      talkUi.ret = false;
+      talkChanged(p, 'Projeto devolvido com ajustes.');
+    } else if (a === 'adj-clear') {
+      p.adjustments = (p.adjustments || []).filter(function (x) { return !x.done; });
+      talkChanged(p);
+    }
+  });
+  $('#talkBox').addEventListener('change', function (e) {
+    var cb = e.target.closest('[data-adj]');
+    if (!cb) return;
+    var p = editingId ? byId(state.projects, editingId) : null;
+    if (!p) return;
+    var adj = (p.adjustments || []).filter(function (x) { return x.id === cb.dataset.adj; })[0];
+    if (!adj) return;
+    adj.done = cb.checked;
+    adj.doneBy = cb.checked ? (currentUser() || '') : '';
+    adj.doneAt = cb.checked ? nowISO() : '';
+    var msg = '';
+    if (cb.checked && !pendingAdj(p) && !isConfStatus(p.statusId) && confStatusId()) {
+      skipStatusLog[p.id] = true;
+      changeStatus(p, confStatusId());
+      addComment(p, 'Concluiu todos os ajustes. Voltou para ' + byId(state.statuses, confStatusId()).name + '.', 'sys');
+      syncStatusFields(p);
+      msg = 'Todos os ajustes feitos. Projeto voltou para a conferência.';
+    }
+    talkChanged(p, msg);
+  });
+  $('#talkBox').addEventListener('keydown', function (e) {
+    if (e.target.id === 'talk-text' && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault(); var sb = $('[data-talk="send"]'); if (sb) sb.click();
+    }
+  });
+
   function openProject(id, preset) {
     preset = preset || {};
     var p = id ? byId(state.projects, id) : null;
@@ -2926,6 +3523,8 @@
     paintRange($('#f-progress-range'));
     fLocation.value = p ? p.location : '';
     fNotes.value = p ? p.notes : '';
+    talkUi.ret = false;
+    if (p) { markSeen(p.id); renderBell(); }
     var firstStatus = state.statuses[0] ? state.statuses[0].id : '';
     var midPriority = state.priorities.length ? state.priorities[Math.floor(state.priorities.length / 2)].id : '';
     discSel = p ? p.typeIds.slice() : []; discOpen = false;
@@ -2942,6 +3541,7 @@
     closePop();
     ui.openFilter = null; renderFilters();
     modalEl.hidden = false;
+    renderTalk();
     autoGrow(fDesc); autoGrow(fNotes);
     modalEl.scrollTop = 0;
     document.body.classList.add('no-scroll');
@@ -2949,7 +3549,10 @@
   }
 
   function closeModal() {
+    var wasId = editingId;
     modalEl.hidden = true;
+    if (wasId) markSeen(wasId);
+    setTimeout(refreshData, 0);
     ui.respOpen = false;
     editingId = null;
     document.body.classList.remove('no-scroll');
@@ -3099,6 +3702,7 @@
     if (e.key !== 'Escape') return;
     if (!confirmEl.hidden) { closeConfirm(false); return; }
     if (!unlockEl.hidden) { closeUnlock(); setSync('error', 'Não conectado'); return; }
+    if (!accountEl.hidden) { closeAccount(); return; }
     if (popCtx) { closePop(); return; }
     if (progCtx) { closeProgPop(); return; }
     if (prioCtx) { closePrioPop(); return; }
@@ -3319,24 +3923,22 @@
     var kind = g.dataset.goto, id = g.dataset.id;
     state.filters = emptyFilters();
     ui.search = ''; searchEl.value = '';
-    if (kind === 'resp') {
-      var c = byId(state.collaborators, id);
-      ui.search = c ? c.name : ''; searchEl.value = ui.search;
-    } else {
-      state.filters[kind] = { mode: 'include', selected: [id] };
-    }
-    if (state.statsScope === 'open' && kind !== 'status') {
-      state.filters.status = { mode: 'exclude', selected: state.statuses.filter(function (s) { return isDoneStatus(s.id); }).map(function (s) { return s.id; }) };
-    }
+    if (state.filters[kind]) state.filters[kind] = { mode: 'include', selected: [id] };
+    if (kind === 'status') { var gk = groupKey(id); if (state.collapsed[gk]) delete state.collapsed[gk]; }
     state.tab = 'projects';
     save(); showTab(); refreshData();
     window.scrollTo(0, 0);
+    if (kind === 'status') {
+      var gEl = $$('.group', tbody).filter(function (x) { return x.dataset.status === id; })[0];
+      if (gEl && gEl.scrollIntoView) gEl.scrollIntoView({ block: 'start' });
+    }
   });
 
   /* =========================================================
      Renderização geral
      ========================================================= */
   function refreshData() {
+    renderBell();
     renderFilters();
     renderTable();
     renderBoard();
@@ -3344,7 +3946,7 @@
   }
   function renderAll() {
     appTitle.textContent = state.title;
-    document.title = state.title;
+    document.title = (IS_PROD ? '' : '[TESTE] ') + state.title;
     applyTheme();
     showTab();
     refreshData();
@@ -3355,6 +3957,16 @@
   function openUnlock() {
     $('#unlockField').classList.remove('invalid');
     $('#unlock-pass').value = '';
+    var sel = $('#unlock-user'), users = keyUsers();
+    var opts = Object.keys(users).map(function (id) { return { id: id, name: users[id].name || id }; })
+      .sort(function (a, b) { return collator.compare(a.name, b.name); })
+      .map(function (u) { return '<option value="' + esc(u.id) + '">' + esc(u.name) + '</option>'; });
+    if (keyFile && keyFile.lock) opts.push('<option value="">Senha da empresa</option>');
+    sel.innerHTML = opts.join('');
+    var last = readLocal(KP + 'lastUser.v1');
+    if (last && users[last]) sel.value = last;
+    $('#unlockUserField').hidden = !hasUsers();
+    $('#unlockIntro').textContent = hasUsers() ? 'Escolha seu nome e digite sua senha. Isso só é pedido uma vez em cada aparelho.' : 'Digite a senha da empresa. Isso só é pedido uma vez em cada aparelho.';
     unlockEl.hidden = false;
     document.body.classList.add('no-scroll');
     setTimeout(function () { $('#unlock-pass').focus(); }, 40);
@@ -3374,7 +3986,9 @@
     var btn = $('#unlockBtn');
     btn.disabled = true; btn.textContent = 'Abrindo…';
     var token = null;
-    try { token = await unlockToken(keyFile.lock, $('#unlock-pass').value); } catch (err) { token = null; }
+    var who = hasUsers() ? $('#unlock-user').value : '';
+    var lockObj = who ? (keyUsers()[who] || {}).lock : keyFile.lock;
+    try { token = lockObj ? await unlockToken(lockObj, $('#unlock-pass').value) : null; } catch (err) { token = null; }
     btn.disabled = false; btn.textContent = 'Entrar';
     if (!token) {
       $('#unlockErr').textContent = 'Senha incorreta. Tente de novo.';
@@ -3382,23 +3996,91 @@
       $('#unlock-pass').select();
       return;
     }
-    gh.cfg = { owner: keyFile.owner, repo: keyFile.repo, token: token };
+    gh.cfg = { owner: keyFile.owner, repo: keyFile.repo, token: token, user: who || null };
     writeLocal(GH_KEY, gh.cfg);
+    if (who) writeLocal(KP + 'lastUser.v1', who);
     closeUnlock();
+    showTab();
+    if (who && (keyUsers()[who] || {}).mustChange) openAccount(true);
     gh.message = '';
     await ghConnect(false);
     renderSettings();
   });
 
   $('#syncState').addEventListener('click', function () {
+    if (!isAdmin()) { openAccount(); return; }
     state.tab = 'settings'; save(); showTab(); renderFilters(); window.scrollTo(0, 0);
   });
 
+  /* ---------- Minha conta ---------- */
+  function renderUserBtn() {
+    var b = document.getElementById('userBtn');
+    if (!b) return;
+    if (!ghConfigured()) { b.hidden = true; return; }
+    var me = currentUser();
+    var c = me ? byId(state.collaborators, me) : null;
+    var name = c ? c.name : (me ? ((keyUsers()[me] || {}).name || 'Usuário') : 'Senha da empresa');
+    $('#userName').textContent = name;
+    var av = $('#userAv');
+    av.textContent = me ? initials(name) : '•';
+    av.style.background = c ? c.color : 'var(--muted)';
+    b.hidden = false;
+  }
+  var accountEl = $('#account');
+  var accountForced = false;
+  function mustChangePass() { var me = currentUser(); return !!(me && (keyUsers()[me] || {}).mustChange); }
+  function openAccount(forced) {
+    accountForced = !!forced;
+    $('#accClose').hidden = accountForced;
+    $('#accLogout').hidden = accountForced;
+    var me = currentUser();
+    $('#accErr').style.display = 'none';
+    $('#acc-pass').value = ''; $('#acc-pass2').value = '';
+    $('#accountPassBox').hidden = !me;
+    $('#accSave').hidden = !me;
+    $('#accountTitle').textContent = me ? ($('#userName').textContent || 'Minha conta') : 'Senha da empresa';
+    $('#accountInfo').textContent = accountForced
+      ? 'Bem-vindo! Este é seu primeiro acesso (ou sua senha foi redefinida). Escolha agora a sua senha.'
+      : me
+      ? 'Você está conectado com o seu usuário' + (isAdmin() ? ' (administrador)' : '') + '. Aqui você pode trocar sua senha ou sair deste aparelho.'
+      : 'Este aparelho entrou com a senha única da empresa. Saia e entre com seu usuário quando ele estiver criado.';
+    accountEl.hidden = false;
+    document.body.classList.add('no-scroll');
+    if (me) setTimeout(function () { $('#acc-pass').focus(); }, 40);
+  }
+  function closeAccount() { if (accountForced) return; accountEl.hidden = true; document.body.classList.remove('no-scroll'); }
+  $('#userBtn').addEventListener('click', openAccount);
+  $('#accClose').addEventListener('click', closeAccount);
+  accountEl.addEventListener('click', function (e) { if (e.target === accountEl) closeAccount(); });
+  $('#accLogout').addEventListener('click', function () {
+    closeAccount();
+    removeLocal(GH_KEY);
+    gh.cfg = null; gh.ready = false; gh.sha = null; gh.message = ''; gh.conflict = false;
+    setSync('error', 'Não conectado');
+    showTab(); renderSettings();
+    fetchKeyFile().then(function (k) { keyFile = k; if (k) openUnlock(); });
+  });
+  $('#accountForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var me = currentUser();
+    if (!me || !ghConfigured()) return;
+    var p1 = $('#acc-pass').value, p2 = $('#acc-pass2').value;
+    var err = !p1 || p1.length < 4 ? 'A senha precisa ter pelo menos 4 caracteres.' : (p1 === FIRST_PASS ? 'Escolha uma senha diferente de 0303.' : (p1 !== p2 ? 'As duas senhas não são iguais.' : null));
+    if (err) { $('#accErr').textContent = err; $('#accErr').style.display = 'block'; return; }
+    var btn = $('#accSave'); btn.disabled = true;
+    var name = (keyUsers()[me] || {}).name || $('#userName').textContent;
+    var r = await setUserPass(gh.cfg.token, me, name, p1);
+    btn.disabled = false;
+    if (r.ok) { accountForced = false; closeAccount(); toast('Senha trocada. Use a nova senha nos próximos acessos.'); }
+    else { $('#accErr').textContent = 'Não consegui salvar agora. Tente de novo.'; $('#accErr').style.display = 'block'; }
+  });
+
   purgeRefs();
+  takeSnap();
   renderAll();
   if (ghConfigured()) {
     ghConnect(true);
-    fetchKeyFile().then(function (k) { keyFile = k; if (!settingsEl.contains(document.activeElement)) renderSettings(); });
+    fetchKeyFile().then(function (k) { keyFile = k; showTab(); if (!settingsEl.contains(document.activeElement)) renderSettings(); if (mustChangePass()) openAccount(true); });
   } else {
     setSync('busy', 'Verificando…');
     fetchKeyFile().then(function (k) {
