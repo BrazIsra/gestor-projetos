@@ -288,6 +288,39 @@
   .ag-nav { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px; }
   .ag-nav .ag-range { min-width: 210px; text-align: center; font-weight: 600; font-size: 15px; }
   .ag-today { margin-left: 6px; }
+  .ag-nav { position: relative; min-height: 38px; }
+  .ag-view { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
+  .ag-view svg { width: 16px; height: 16px; }
+  @media (max-width: 900px) { .ag-view { position: static; transform: none; margin-left: 4px; } }
+  @keyframes agIn { from { opacity: 0; transform: scale(.985) translateY(6px); } to { opacity: 1; transform: none; } }
+  .ag-anim { animation: agIn .28s ease; transform-origin: 50% 0; }
+  .ag-mgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: auto repeat(var(--weeks), minmax(118px, 1fr)); border: 1px solid var(--border); border-radius: 14px; background: var(--surface); overflow: hidden; min-height: calc(100vh - var(--header-h) - 150px); }
+  .ag-mdow { text-align: center; padding: 10px 4px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--border); border-left: 1px solid var(--border); }
+  .ag-mdow:first-child { border-left: 0; }
+  .ag-mday { border-left: 1px solid var(--border); border-top: 1px solid var(--border); display: flex; flex-direction: column; min-width: 0; padding: 4px 0 0; }
+  .ag-mday:nth-child(7n + 1) { border-left: 0; }
+  .ag-mgrid > .ag-mday:nth-child(-n + 14) { border-top: 0; }
+  .ag-mday.out { background: var(--surface-2); }
+  .ag-mday.out .ag-mnum { color: var(--muted); opacity: .6; }
+  .ag-mnum { align-self: flex-end; margin: 0 6px 2px; min-width: 26px; height: 26px; padding: 0 6px; display: grid; place-items: center; border-radius: 999px; font-size: 13px; }
+  .ag-mday.today .ag-mnum { background: var(--primary); color: #fff; font-weight: 600; }
+  .ag-mday .ag-list { gap: 4px; padding: 0 6px 6px; }
+  .ag-item.ag-mini { padding: 3px 7px; border-top-width: 3px; border-radius: 6px; }
+  .ag-item.ag-mini b { font-size: 12px; -webkit-line-clamp: 1; font-weight: 600; }
+  .ag-more { border: 0; background: none; padding: 2px 4px; text-align: left; font: inherit; font-size: 12px; font-weight: 600; color: var(--primary); cursor: pointer; border-radius: 6px; }
+  .ag-more:hover { background: var(--hover); }
+  @media (max-width: 760px) {
+    .ag-view span { display: none; }
+    .ag-mgrid { grid-template-rows: auto repeat(var(--weeks), minmax(70px, auto)); min-height: 0; }
+    .ag-mgrid .ag-mday { flex-direction: column; align-items: stretch; border-left: 1px solid var(--border); border-top: 1px solid var(--border); }
+    .ag-mgrid .ag-mday:nth-child(7n + 1) { border-left: 0; }
+    .ag-mgrid > .ag-mday:nth-child(-n + 14) { border-top: 0; }
+    .ag-mgrid .ag-mday .ag-list { flex: 1; }
+    .ag-mnum { font-size: 12px; min-width: 22px; height: 22px; margin: 0 3px 2px; }
+    .ag-mday .ag-list { padding: 0 3px 4px; }
+    .ag-item.ag-mini { padding: 2px 4px; }
+    .ag-item.ag-mini b { font-size: 10.5px; }
+  }
   .ag-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border: 1px solid var(--border); border-radius: 14px; background: var(--surface); overflow: hidden; min-height: calc(100vh - var(--header-h) - 150px); }
   .ag-day { border-left: 1px solid var(--border); display: flex; flex-direction: column; min-width: 0; }
   .ag-day:first-child { border-left: 0; }
@@ -2403,7 +2436,29 @@
 
   /* ---------- Agenda semanal (no lugar do Board) ---------- */
   var agendaEl = $('#agenda');
-  var agendaWeek = 0;
+  /* data de referência da agenda (semana ou mês que está aparecendo) */
+  var agAnchor = new Date(); agAnchor.setHours(0, 0, 0, 0);
+  var agView = readLocal(KP + 'agView.v1') === 'month' ? 'month' : 'week';
+  var agAnim = false;
+  var MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  function agShift(step) {
+    if (step === 0) { agAnchor = new Date(); agAnchor.setHours(0, 0, 0, 0); return; }
+    if (agView === 'month') { agAnchor = new Date(agAnchor.getFullYear(), agAnchor.getMonth() + step, 1); }
+    else { agAnchor = new Date(agAnchor); agAnchor.setDate(agAnchor.getDate() + step * 7); }
+  }
+  function agIsCurrent() {
+    var t = new Date(); t.setHours(0, 0, 0, 0);
+    if (agView === 'month') return t.getFullYear() === agAnchor.getFullYear() && t.getMonth() === agAnchor.getMonth();
+    var a = new Date(agAnchor); a.setDate(a.getDate() - a.getDay());
+    var b = new Date(t); b.setDate(b.getDate() - b.getDay());
+    return isoDay(a) === isoDay(b);
+  }
+  function agItemsOn(iso) {
+    return state.projects.filter(function (p) { return p.deadline === iso && agMineOk(p) && passAllFilters(p); })
+      .sort(function (a, b) { return (isDone(a) ? 1 : 0) - (isDone(b) ? 1 : 0) || collator.compare(a.name, b.name); });
+  }
+  var ICON_WEEK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9h18M8 2.5v3M16 2.5v3M9 9v12M15 9v12"/></svg>';
+  var ICON_MONTH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9h18M8 2.5v3M16 2.5v3"/><path d="M7.5 13h.01M12 13h.01M16.5 13h.01M7.5 17h.01M12 17h.01M16.5 17h.01" stroke-width="2.6"/></svg>';
   var DOW = ['dom.', 'seg.', 'ter.', 'qua.', 'qui.', 'sex.', 'sáb.'];
   var MES = ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.'];
   function isoDay(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
@@ -2423,31 +2478,55 @@
   }
   function renderBoard() {
     var today = new Date(); today.setHours(0, 0, 0, 0);
-    var start = new Date(today); start.setDate(today.getDate() - today.getDay() + agendaWeek * 7);
-    var days = [];
-    for (var i = 0; i < 7; i++) { var d = new Date(start); d.setDate(start.getDate() + i); days.push(d); }
-    var end = days[6];
-    var range = MES[start.getMonth()] + ' ' + start.getDate() + ' - ' + MES[end.getMonth()] + ' ' + end.getDate() + ', ' + end.getFullYear();
     var todayIso = isoDay(today);
-    var shown = 0;
-    var cols = days.map(function (d, i) {
-      var iso = isoDay(d);
-      var items = state.projects.filter(function (p) { return p.deadline === iso && agMineOk(p) && passAllFilters(p); })
-        .sort(function (a, b) { return (isDone(a) ? 1 : 0) - (isDone(b) ? 1 : 0) || collator.compare(a.name, b.name); });
-      shown += items.length;
-      return '<div class="ag-day' + (iso === todayIso ? ' today' : '') + '" data-day="' + iso + '">' +
-        '<div class="ag-head"><div class="ag-dow">' + DOW[i] + '</div><div class="ag-num">' + d.getDate() + '</div></div>' +
-        '<div class="ag-list">' + items.map(function (p) { return agItemHTML(p); }).join('') + '</div></div>';
-    }).join('');
-    var me = currentUser();
+    var shown = 0, range, grid;
+    if (agView === 'month') {
+      var first = new Date(agAnchor.getFullYear(), agAnchor.getMonth(), 1);
+      var start = new Date(first); start.setDate(1 - first.getDay());
+      var last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
+      var weeks = Math.ceil((first.getDay() + last.getDate()) / 7);
+      range = MESES[first.getMonth()].charAt(0).toUpperCase() + MESES[first.getMonth()].slice(1) + ' ' + first.getFullYear();
+      var cells = '';
+      for (var i = 0; i < weeks * 7; i++) {
+        var d = new Date(start); d.setDate(start.getDate() + i);
+        var iso = isoDay(d), items = agItemsOn(iso);
+        var out = d.getMonth() !== first.getMonth();
+        if (!out) shown += items.length;
+        var MAXV = 3, more = items.length - MAXV;
+        cells += '<div class="ag-day ag-mday' + (iso === todayIso ? ' today' : '') + (out ? ' out' : '') + '" data-day="' + iso + '">' +
+          '<div class="ag-mnum">' + d.getDate() + '</div>' +
+          '<div class="ag-list">' + items.slice(0, more > 0 ? MAXV - 1 : MAXV).map(function (p) { return agMiniHTML(p); }).join('') +
+          (more > 0 ? '<button type="button" class="ag-more" data-ag-week="' + iso + '">+' + (more + 1) + ' mais</button>' : '') + '</div></div>';
+      }
+      grid = '<div class="ag-mgrid' + (agAnim ? ' ag-anim' : '') + '" style="--weeks:' + weeks + '">' +
+        DOW.map(function (w) { return '<div class="ag-mdow">' + w + '</div>'; }).join('') + cells + '</div>';
+    } else {
+      var ws = new Date(agAnchor); ws.setDate(agAnchor.getDate() - agAnchor.getDay());
+      var days = [];
+      for (var j = 0; j < 7; j++) { var dd = new Date(ws); dd.setDate(ws.getDate() + j); days.push(dd); }
+      var end = days[6];
+      range = MES[ws.getMonth()] + ' ' + ws.getDate() + ' - ' + MES[end.getMonth()] + ' ' + end.getDate() + ', ' + end.getFullYear();
+      grid = '<div class="ag-grid' + (agAnim ? ' ag-anim' : '') + '">' + days.map(function (d, i) {
+        var iso = isoDay(d), items = agItemsOn(iso);
+        shown += items.length;
+        return '<div class="ag-day' + (iso === todayIso ? ' today' : '') + '" data-day="' + iso + '">' +
+          '<div class="ag-head"><div class="ag-dow">' + DOW[i] + '</div><div class="ag-num">' + d.getDate() + '</div></div>' +
+          '<div class="ag-list">' + items.map(function (p) { return agItemHTML(p); }).join('') + '</div></div>';
+      }).join('') + '</div>';
+    }
+    agAnim = false;
+    var isM = agView === 'month';
     agendaEl.innerHTML = '<div class="ag-nav">' +
-      '<button type="button" class="icon-btn" data-ag="-1" title="Semana anterior" aria-label="Semana anterior">‹</button>' +
+      '<button type="button" class="icon-btn" data-ag="-1" title="' + (isM ? 'Mês anterior' : 'Semana anterior') + '" aria-label="' + (isM ? 'Mês anterior' : 'Semana anterior') + '">‹</button>' +
       '<span class="ag-range">' + range + '</span>' +
-      '<button type="button" class="icon-btn" data-ag="1" title="Próxima semana" aria-label="Próxima semana">›</button>' +
-      (agendaWeek !== 0 ? '<button type="button" class="btn sm ag-today" data-ag="0">Hoje</button>' : '') +
-      '</div>' +
-      '<div class="ag-grid">' + cols + '</div>' +
-      (!shown ? '<div class="ag-foot">Nenhum projeto com prazo nesta semana.</div>' : '');
+      '<button type="button" class="icon-btn" data-ag="1" title="' + (isM ? 'Próximo mês' : 'Próxima semana') + '" aria-label="' + (isM ? 'Próximo mês' : 'Próxima semana') + '">›</button>' +
+      (!agIsCurrent() ? '<button type="button" class="btn sm ag-today" data-ag="0">Hoje</button>' : '') +
+      '<button type="button" class="filter-btn ag-view" data-ag-view title="' + (isM ? 'Ver a semana' : 'Ver o mês inteiro') + '">' + (isM ? ICON_WEEK + '<span>Semana</span>' : ICON_MONTH + '<span>Mês</span>') + '</button>' +
+      '</div>' + grid +
+      (!shown ? '<div class="ag-foot">Nenhum projeto com prazo ' + (isM ? 'neste mês' : 'nesta semana') + '.</div>' : '');
+  }
+  function agMiniHTML(p) {
+    return '<button type="button" class="ag-item ag-mini ' + agDueClass(p) + (isDone(p) ? ' done' : '') + '" data-open="' + esc(p.id) + '" title="' + esc(p.name) + '"><b>' + esc(p.name) + '</b></button>';
   }
   /* Arrastar um projeto para outro dia muda o prazo */
   var agDrag = null, agSuppressClick = false;
@@ -2492,7 +2571,7 @@
         nav.classList.add('ag-hot');
         var step = Number(nav.dataset.ag);
         d.hotTimer = setInterval(function () {
-          agendaWeek += step; renderBoard();
+          agShift(step); renderBoard();
           var src = $$('.ag-item', agendaEl).filter(function (x) { return x.dataset.open === d.id; })[0];
           if (src) { src.classList.add('ag-src'); d.el = src; }
           d.hot = null; d.day = null;
@@ -2553,7 +2632,14 @@
   agendaEl.addEventListener('click', function (e) {
     if (agSuppressClick) { e.preventDefault(); return; }
     var nav = e.target.closest('[data-ag]');
-    if (nav) { var v = Number(nav.dataset.ag); agendaWeek = v === 0 ? 0 : agendaWeek + v; renderBoard(); return; }
+    if (nav) { agShift(Number(nav.dataset.ag)); renderBoard(); return; }
+    if (e.target.closest('[data-ag-view]')) {
+      agView = agView === 'month' ? 'week' : 'month';
+      writeLocal(KP + 'agView.v1', agView);
+      agAnim = true; renderBoard(); return;
+    }
+    var wk = e.target.closest('[data-ag-week]');
+    if (wk) { var pa = wk.dataset.agWeek.split('-'); agAnchor = new Date(+pa[0], +pa[1] - 1, +pa[2]); agView = 'week'; writeLocal(KP + 'agView.v1', agView); agAnim = true; renderBoard(); return; }
     var it = e.target.closest('[data-open]');
     if (it) openProject(it.dataset.open);
   });
@@ -4702,7 +4788,7 @@
   });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.8.0';
+  var APP_VERSION = '2.9.0';
   $('#verTxt').textContent = 'v' + APP_VERSION + (IS_PROD ? '' : '-teste');
 
   purgeRefs();
