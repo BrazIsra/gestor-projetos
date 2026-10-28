@@ -235,6 +235,7 @@
 
   main { padding: 24px 24px 8px; }
   .agenda { max-width: 1400px; margin: 0 auto; }
+  .ag-filters { max-width: 1400px; margin: 0 auto 10px; display: flex; }
   .ag-nav { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px; }
   .ag-nav .ag-range { min-width: 210px; text-align: center; font-weight: 600; font-size: 15px; }
   .ag-today { margin-left: 6px; }
@@ -932,6 +933,7 @@
 
   <section id="view-board" class="view" hidden>
     <div class="board" id="board" hidden></div>
+    <div class="ag-filters" id="agFilterSlot"></div>
     <div class="agenda" id="agenda"></div>
   </section>
 
@@ -1821,6 +1823,10 @@
       b.setAttribute('aria-selected', on ? 'true' : 'false');
     });
     $$('.view').forEach(function (v) { v.hidden = v.id !== 'view-' + state.tab; });
+    /* o mesmo filtro aparece na Agenda */
+    var slot = state.tab === 'board' ? $('#agFilterSlot') : $('#resultCount');
+    if (state.tab === 'board') { if (filtersEl.parentNode !== slot) slot.appendChild(filtersEl); }
+    else if (filtersEl.nextElementSibling !== slot) slot.parentNode.insertBefore(filtersEl, slot);
   }
   $$('.tab').forEach(function (b) {
     b.addEventListener('click', function () {
@@ -1903,6 +1909,9 @@
     var hay = [p.name, p.desc, p.client, p.location, p.notes, t && t.name, s && s.name, pr && pr.name].concat(names).join(' ');
     return norm(hay).indexOf(q) >= 0;
   }
+  function passAllFilters(p) {
+    return passFilter('resp', p.responsibles) && passFilter('priority', p.priorityId) && passFilter('type', p.typeIds);
+  }
   function filteredProjects() {
     var q = norm(ui.search.trim());
     return state.projects.filter(function (p) {
@@ -1943,7 +1952,7 @@
     filtersEl.innerHTML = html;
   }
 
-  function commitFilters() { save(); renderFilters(); renderTable(); }
+  function commitFilters() { save(); renderFilters(); renderTable(); renderBoard(); }
 
   filtersEl.addEventListener('click', function (e) {
     var b = e.target.closest('[data-f]');
@@ -2320,7 +2329,7 @@
     var shown = 0;
     var cols = days.map(function (d, i) {
       var iso = isoDay(d);
-      var items = state.projects.filter(function (p) { return p.deadline === iso && agMineOk(p); })
+      var items = state.projects.filter(function (p) { return p.deadline === iso && agMineOk(p) && passAllFilters(p); })
         .sort(function (a, b) { return (isDone(a) ? 1 : 0) - (isDone(b) ? 1 : 0) || collator.compare(a.name, b.name); });
       shown += items.length;
       return '<div class="ag-day' + (iso === todayIso ? ' today' : '') + '" data-day="' + iso + '">' +
