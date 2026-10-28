@@ -234,7 +234,39 @@
   input[type="date"] { min-height: 38px; }
 
   main { padding: 24px 24px 8px; }
-  .app-foot { padding: 0 24px 8px; text-align: right; font-size: 11px; line-height: 1.4; color: var(--muted); opacity: .6; }
+  .agenda { max-width: 1400px; margin: 0 auto; }
+  .ag-nav { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px; }
+  .ag-nav .ag-range { min-width: 210px; text-align: center; font-weight: 600; font-size: 15px; }
+  .ag-today { margin-left: 6px; }
+  .ag-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border: 1px solid var(--border); border-radius: 14px; background: var(--surface); overflow: hidden; min-height: calc(100vh - var(--header-h) - 150px); }
+  .ag-day { border-left: 1px solid var(--border); display: flex; flex-direction: column; min-width: 0; }
+  .ag-day:first-child { border-left: 0; }
+  .ag-day.weekend { background: var(--surface-2); }
+  .ag-head { text-align: center; padding: 14px 6px 10px; }
+  .ag-dow { font-size: 12px; color: var(--muted); text-transform: lowercase; }
+  .ag-num { display: inline-grid; place-items: center; width: 44px; height: 44px; margin-top: 2px; border-radius: 50%; font-size: 24px; font-weight: 400; }
+  .ag-day.today .ag-dow { color: var(--primary); font-weight: 600; }
+  .ag-day.today .ag-num { background: var(--primary); color: #fff; }
+  .ag-list { display: flex; flex-direction: column; gap: 6px; padding: 4px 8px 12px; }
+  .ag-item { display: block; width: 100%; text-align: left; padding: 7px 9px; border: 1px solid var(--border); border-left: 4px solid var(--c, var(--border)); border-radius: 8px; background: var(--surface); color: inherit; font: inherit; cursor: pointer; }
+  .ag-item:hover { background: var(--hover); }
+  .ag-item b { display: block; font-size: 12.5px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .ag-item small { display: flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 11.5px; color: var(--muted); }
+  .ag-item small .dot { width: 7px; height: 7px; }
+  .ag-item.done { opacity: .55; }
+  .ag-item.done b { text-decoration: line-through; }
+  .ag-item .avatars { margin-left: auto; }
+  .ag-foot { margin-top: 10px; font-size: 12.5px; color: var(--muted); text-align: center; }
+  .ag-foot button { border: 0; background: none; padding: 0; font: inherit; color: var(--primary); cursor: pointer; }
+  @media (max-width: 760px) {
+    .ag-grid { grid-template-columns: 1fr; min-height: 0; }
+    .ag-day { border-left: 0; border-top: 1px solid var(--border); flex-direction: row; align-items: flex-start; }
+    .ag-day:first-child { border-top: 0; }
+    .ag-head { width: 64px; flex: none; }
+    .ag-num { width: 36px; height: 36px; font-size: 18px; }
+    .ag-list { flex: 1; padding: 10px 10px 10px 0; }
+  }
+  .app-foot { padding: 0 24px 8px; text-align: left; font-size: 11px; line-height: 1.4; color: var(--muted); opacity: .6; }
   .test-strip { position: fixed; top: 0; left: 0; right: 0; height: 26px; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 0 12px; background: #f76b15; color: #fff; font-size: 12.5px; font-weight: 700; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   body.is-test { padding-top: calc(var(--header-h) + 26px); }
   body.is-test .app-header { top: 26px; }
@@ -849,7 +881,7 @@
   </div>
   <nav class="tabs" role="tablist">
     <button class="tab" role="tab" data-tab="projects">Projetos</button>
-    <button class="tab" role="tab" data-tab="board">Board</button>
+    <button class="tab" role="tab" data-tab="board">Agenda</button>
     <button class="tab" role="tab" data-tab="stats">Estatísticas</button>
     <button class="tab" role="tab" data-tab="settings">Configurações</button>
   </nav>
@@ -876,7 +908,8 @@
   </section>
 
   <section id="view-board" class="view" hidden>
-    <div class="board" id="board"></div>
+    <div class="board" id="board" hidden></div>
+    <div class="agenda" id="agenda"></div>
   </section>
 
   <section id="view-stats" class="view" hidden>
@@ -2226,22 +2259,51 @@
       '</div>';
   }
 
+  /* ---------- Agenda semanal (no lugar do Board) ---------- */
+  var agendaEl = $('#agenda');
+  var agendaWeek = 0;
+  var DOW = ['dom.', 'seg.', 'ter.', 'qua.', 'qui.', 'sex.', 'sáb.'];
+  var MES = ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.'];
+  function isoDay(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   function renderBoard() {
-    var cols = state.statuses.map(function (s) { return { id: s.id, name: s.name, color: s.color }; });
-    var orphans = state.projects.filter(function (p) { return !byId(state.statuses, p.statusId); });
-    if (orphans.length || !cols.length) cols.push({ id: '', name: 'Sem status', color: '#8b95a7' });
-    boardEl.innerHTML = cols.map(function (c) {
-      var items = c.id
-        ? state.projects.filter(function (p) { return p.statusId === c.id; })
-        : orphans;
-      return '<div class="col" data-status="' + esc(c.id) + '">' +
-        '<div class="col-head" style="--c:' + esc(c.color) + '"><span class="dot" style="background:' + esc(c.color) + '"></span>' +
-        '<span class="col-title" title="' + esc(c.name) + '">' + esc(c.name) + '</span><span class="count">' + items.length + '</span>' +
-        '<button type="button" class="icon-btn sm" data-add="' + esc(c.id) + '" title="Novo projeto em ' + esc(c.name) + '">+</button></div>' +
-        '<div class="col-list">' + (items.length ? items.map(cardHTML).join('') : '<div class="col-empty">Arraste projetos para cá</div>') + '</div>' +
-        '</div>';
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var start = new Date(today); start.setDate(today.getDate() - today.getDay() + agendaWeek * 7);
+    var days = [];
+    for (var i = 0; i < 7; i++) { var d = new Date(start); d.setDate(start.getDate() + i); days.push(d); }
+    var end = days[6];
+    var range = MES[start.getMonth()] + ' ' + start.getDate() + ' - ' + MES[end.getMonth()] + ' ' + end.getDate() + ', ' + end.getFullYear();
+    var todayIso = isoDay(today);
+    var shown = 0;
+    var cols = days.map(function (d, i) {
+      var iso = isoDay(d);
+      var items = state.projects.filter(function (p) { return p.deadline === iso; })
+        .sort(function (a, b) { return (isDone(a) ? 1 : 0) - (isDone(b) ? 1 : 0) || collator.compare(a.name, b.name); });
+      shown += items.length;
+      return '<div class="ag-day' + (iso === todayIso ? ' today' : '') + (i === 0 || i === 6 ? ' weekend' : '') + '">' +
+        '<div class="ag-head"><div class="ag-dow">' + DOW[i] + '</div><div class="ag-num">' + d.getDate() + '</div></div>' +
+        '<div class="ag-list">' + items.map(function (p) {
+          var pr = byId(state.priorities, p.priorityId), st = byId(state.statuses, p.statusId);
+          return '<button type="button" class="ag-item' + (isDone(p) ? ' done' : '') + '" data-open="' + esc(p.id) + '" style="--c:' + esc(pr ? pr.color : 'var(--border)') + '" title="' + esc(p.name) + '">' +
+            '<b>' + esc(p.name) + '</b><small>' + (st ? '<span class="dot" style="background:' + esc(st.color) + '"></span>' + esc(st.name) : 'Sem status') +
+            avatarsHTML(p.responsibles, false) + '</small></button>';
+        }).join('') + '</div></div>';
     }).join('');
+    var noDate = state.projects.filter(function (p) { return !p.deadline && !isDone(p); }).length;
+    agendaEl.innerHTML = '<div class="ag-nav">' +
+      '<button type="button" class="icon-btn" data-ag="-1" title="Semana anterior" aria-label="Semana anterior">‹</button>' +
+      '<span class="ag-range">' + range + '</span>' +
+      '<button type="button" class="icon-btn" data-ag="1" title="Próxima semana" aria-label="Próxima semana">›</button>' +
+      (agendaWeek !== 0 ? '<button type="button" class="btn sm ag-today" data-ag="0">Hoje</button>' : '') +
+      '</div><div class="ag-grid">' + cols + '</div>' +
+      '<div class="ag-foot">' + (shown ? '' : 'Nenhum projeto com prazo nesta semana. ') +
+      (noDate ? noDate + ' projeto(s) em aberto sem prazo ficam fora da agenda.' : '') + '</div>';
   }
+  agendaEl.addEventListener('click', function (e) {
+    var nav = e.target.closest('[data-ag]');
+    if (nav) { var v = Number(nav.dataset.ag); agendaWeek = v === 0 ? 0 : agendaWeek + v; renderBoard(); return; }
+    var it = e.target.closest('[data-open]');
+    if (it) openProject(it.dataset.open);
+  });
 
   boardEl.addEventListener('click', function (e) {
     var add = e.target.closest('[data-add]');
