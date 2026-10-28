@@ -164,6 +164,15 @@
   .talk { width: 400px; flex: none; display: flex; flex-direction: column; gap: 10px; padding: 18px; border-left: 1px solid var(--border); position: sticky; top: 0; max-height: calc(100vh - 80px); overflow-y: auto; align-self: stretch; }
   .talk[hidden] { display: none; }
   .talk .msgs { max-height: none; flex: 1; min-height: 140px; }
+  /* ficha do projeto cabe na tela: o meio rola e o rodapé (Salvar) fica sempre visível */
+  @media (min-width: 901px) {
+    #modal { padding: 16px; align-items: center; overflow: hidden; }
+    #projectForm { display: flex; flex-direction: column; max-height: calc(100vh - 32px); }
+    #projectForm > .modal-head, #projectForm > .modal-foot { flex: none; }
+    #projectForm > .modal-split { flex: 1; min-height: 0; align-items: stretch; }
+    #projectForm > .modal-split > .modal-body { overflow-y: auto; align-content: start; }
+    #projectForm .talk { position: static; max-height: none; min-height: 0; }
+  }
   .talk-head { font-size: 15px; font-weight: 700; }
   @media (max-width: 900px) {
     .modal-split { flex-direction: column; align-items: stretch; }
@@ -2502,7 +2511,7 @@
     var b = new Date(t); b.setDate(b.getDate() - b.getDay());
     return isoDay(a) === isoDay(b);
   }
-  /* Feriados nacionais (as datas da Páscoa são calculadas a cada ano) */
+  /* Feriados obrigatórios: nacionais + municipal de Lages-SC (a Sexta-feira Santa é calculada pela Páscoa) */
   var holCache = {};
   function easter(y) {
     var a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
@@ -2518,8 +2527,8 @@
     fx('01-01', 'Confraternização Universal'); fx('04-21', 'Tiradentes'); fx('05-01', 'Dia do Trabalho');
     fx('09-07', 'Independência'); fx('10-12', 'Nossa Senhora Aparecida'); fx('11-02', 'Finados');
     fx('11-15', 'Proclamação da República'); fx('11-20', 'Consciência Negra'); fx('12-25', 'Natal');
-    var e = easter(y);
-    rel(e, -48, 'Carnaval'); rel(e, -47, 'Carnaval'); rel(e, -2, 'Sexta-feira Santa'); rel(e, 60, 'Corpus Christi');
+    fx('08-15', 'N. Sra. dos Prazeres (Lages)'); /* feriado municipal de Lages-SC */
+    rel(easter(y), -2, 'Sexta-feira Santa'); /* Carnaval e Corpus Christi são ponto facultativo: ficam de fora */
     return (holCache[y] = o);
   }
   function holidayOn(iso) { return holidays(+iso.slice(0, 4))[iso] || ''; }
@@ -4888,7 +4897,7 @@
   var APP_VERSION = '2.11.0';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
-    { v: '2.11.0', d: '28/10/2026', items: ['Conferente no projeto: escolha quem confere; ele é avisado no sininho quando o projeto entra em conferência.', 'Feriados nacionais marcados na agenda (semana e mês), com aviso ao arrastar um prazo para um feriado.'] },
+    { v: '2.11.0', d: '28/10/2026', items: ['Conferente no projeto: escolha quem confere; ele é avisado no sininho quando o projeto entra em conferência.', 'Feriados obrigatórios (nacionais e de Lages-SC) marcados na agenda, com aviso ao arrastar um prazo para um feriado.', 'Ficha do projeto cabe na tela: o botão Salvar fica sempre visível.'] },
     { v: '2.10.0', d: '28/10/2026', items: ['Lista de versões e atualizações: clique na versão no rodapé (só administradores).'] },
     { v: '2.9.1', d: '28/10/2026', items: ['Transição suave na troca de abas, nas setas da agenda e nas estatísticas.'] },
     { v: '2.9.0', d: '28/10/2026', items: ['Agenda com visão do mês inteiro (botão Mês/Semana), com transição.', 'Arrastar projeto para outro dia também na visão do mês.', '"+N mais" quando o dia tem muitos projetos abre a semana daquele dia.'] },
