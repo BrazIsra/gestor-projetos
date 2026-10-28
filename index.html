@@ -235,7 +235,8 @@
 
   main { padding: 24px 24px 8px; }
   .agenda { max-width: 1400px; margin: 0 auto; }
-  .ag-filters { max-width: 1400px; margin: 0 auto 10px; display: flex; }
+  .ag-filters { max-width: 1400px; margin: 0 auto; height: 0; position: relative; z-index: 20; display: flex; }
+  @media (max-width: 900px) { .ag-filters { height: auto; margin-bottom: 10px; } }
   .ag-nav { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px; }
   .ag-nav .ag-range { min-width: 210px; text-align: center; font-weight: 600; font-size: 15px; }
   .ag-today { margin-left: 6px; }
