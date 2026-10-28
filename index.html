@@ -247,7 +247,10 @@
   .ag-day.today .ag-dow { color: var(--primary); font-weight: 600; }
   .ag-day.today .ag-num { background: var(--primary); color: #fff; }
   .ag-list { display: flex; flex-direction: column; gap: 6px; padding: 4px 8px 12px; }
-  .ag-item { display: block; width: 100%; text-align: left; padding: 7px 9px; border: 1px solid var(--border); border-left: 4px solid var(--c, var(--border)); border-radius: 8px; background: var(--surface); color: inherit; font: inherit; cursor: pointer; }
+  .ag-item { display: block; width: 100%; text-align: left; padding: 7px 9px; border: 1px solid var(--border); border-top: 4px solid var(--border); border-radius: 8px; background: var(--surface); color: inherit; font: inherit; cursor: pointer; }
+  .ag-item.due-late { border-top-color: var(--danger); }
+  .ag-item.due-soon { border-top-color: var(--warn); }
+  .ag-item.due-ok { border-top-color: #22a06b; }
   .ag-item:hover { background: var(--hover); }
   .ag-item { cursor: grab; user-select: none; -webkit-user-select: none; }
   .ag-item.ag-src { opacity: .3; }
@@ -1657,6 +1660,13 @@
   }
   /* Regra aplicada sempre que um projeto muda de status */
   /* Status "Concluído" (qualquer status cujo nome comece com Conclu) */
+  /* "Em aberto" = em andamento, em revisão ou em conferência */
+  function isOpenStatus(statusId) {
+    var s = byId(state.statuses, statusId);
+    if (!s) return false;
+    var n = norm(s.name);
+    return n.indexOf('andamento') >= 0 || n.indexOf('revis') >= 0 || n.indexOf('confer') >= 0;
+  }
   function isDoneStatus(statusId) {
     var s = byId(state.statuses, statusId);
     return !!s && norm(s.name).indexOf('conclu') >= 0;
@@ -2287,9 +2297,15 @@
   function isoDay(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   var agMine = !!readLocal(KP + 'agMine.v1');
   function agMineOk(p) { var me = currentUser(); return !agMine || !me || p.responsibles.indexOf(me) >= 0; }
+  function agDueClass(p) {
+    if (isDone(p) || !p.deadline) return 'due-none';
+    var d = daysUntil(p.deadline);
+    if (d === null) return 'due-none';
+    return d <= 0 ? 'due-late' : (d <= 2 ? 'due-soon' : 'due-ok');
+  }
   function agItemHTML(p, note) {
-    var pr = byId(state.priorities, p.priorityId), st = byId(state.statuses, p.statusId);
-    return '<button type="button" class="ag-item' + (isDone(p) ? ' done' : '') + '" data-open="' + esc(p.id) + '" style="--c:' + esc(pr ? pr.color : 'var(--border)') + '" title="' + esc(p.name) + '">' +
+    var st = byId(state.statuses, p.statusId);
+    return '<button type="button" class="ag-item ' + agDueClass(p) + (isDone(p) ? ' done' : '') + '" data-open="' + esc(p.id) + '" title="' + esc(p.name) + '">' +
       '<b>' + esc(p.name) + '</b><small>' + (note ? esc(note) : (st ? '<span class="dot" style="background:' + esc(st.color) + '"></span>' + esc(st.name) : 'Sem status')) +
       avatarsHTML(p.responsibles, false) + '</small></button>';
   }
@@ -2311,10 +2327,6 @@
         '<div class="ag-head"><div class="ag-dow">' + DOW[i] + '</div><div class="ag-num">' + d.getDate() + '</div></div>' +
         '<div class="ag-list">' + items.map(function (p) { return agItemHTML(p); }).join('') + '</div></div>';
     }).join('');
-    var noDateList = state.projects.filter(function (p) { return !p.deadline && !isDone(p) && agMineOk(p); })
-      .sort(function (a, b) { return collator.compare(a.name, b.name); });
-    var late = state.projects.filter(function (p) { return p.deadline && p.deadline < todayIso && !isDone(p) && agMineOk(p); })
-      .sort(function (a, b) { return a.deadline.localeCompare(b.deadline); });
     var me = currentUser();
     agendaEl.innerHTML = '<div class="ag-nav">' +
       '<button type="button" class="icon-btn" data-ag="-1" title="Semana anterior" aria-label="Semana anterior">‹</button>' +
@@ -2323,14 +2335,7 @@
       (agendaWeek !== 0 ? '<button type="button" class="btn sm ag-today" data-ag="0">Hoje</button>' : '') +
       (me ? '<label class="ag-mine"><input type="checkbox" id="agMine"' + (agMine ? ' checked' : '') + '> Só os meus</label>' : '') +
       '</div>' +
-      (late.length ? '<div class="ag-late"><span class="ag-late-t">⚠ Atrasados (' + late.length + ')</span>' + late.map(function (p) {
-        var pa = p.deadline.split('-');
-        return agItemHTML(p, 'venceu ' + pa[2] + '/' + pa[1]);
-      }).join('') + '</div>' : '') +
-      '<div class="ag-wrap"><div class="ag-grid">' + cols + '</div>' +
-      '<div class="ag-side" data-day=""><div class="ag-side-head">Sem prazo <span class="count">' + noDateList.length + '</span></div>' +
-      '<div class="ag-side-sub">Arraste para um dia para definir o prazo. Solte aqui para tirar o prazo.</div>' +
-      '<div class="ag-list">' + noDateList.map(function (p) { return agItemHTML(p); }).join('') + '</div></div></div>' +
+      '<div class="ag-grid">' + cols + '</div>' +
       (!shown ? '<div class="ag-foot">Nenhum projeto com prazo nesta semana.</div>' : '');
   }
   /* Arrastar um projeto para outro dia muda o prazo */
@@ -2361,7 +2366,7 @@
     var d = agDrag;
     d.ghost.style.transform = 'translate(' + (x - d.dx) + 'px,' + (y - d.dy) + 'px) rotate(2deg) scale(1.03)';
     var under = document.elementFromPoint(x, y);
-    var day = under && under.closest ? under.closest('.ag-day, .ag-side') : null;
+    var day = under && under.closest ? under.closest('.ag-day') : null;
     if (day !== d.day) {
       if (d.day) d.day.classList.remove('ag-drop');
       d.day = day;
@@ -3998,10 +4003,11 @@
   function renderStats() {
     var scope = state.statsScope === 'all' ? 'all' : 'open';
     var all = state.projects;
-    var openAll = all.filter(function (p) { return !isDoneStatus(p.statusId); });
+    var openAll = all.filter(function (p) { return isOpenStatus(p.statusId); });
     var list = scope === 'all' ? all : openAll;
     var showDone = scope === 'all';
-    var doneCount = all.length - openAll.length;
+    var doneCount = all.filter(function (p) { return isDoneStatus(p.statusId); }).length;
+    var waitCount = all.length - openAll.length - doneCount;
 
     var late = openAll.filter(function (p) { var d = daysUntil(p.deadline); return d !== null && d < 0; });
     var soon = openAll.filter(function (p) { var d = daysUntil(p.deadline); return d !== null && d >= 0 && d <= 7; });
@@ -4011,14 +4017,14 @@
     var avg = avgProgress(list);
 
     var html = '<div class="st-head"><div><h2>Estatísticas</h2><p>' +
-      (scope === 'all' ? 'Todos os ' + all.length + ' projetos, incluindo os concluídos.' : 'Só os ' + openAll.length + ' projetos abertos (sem os concluídos).') +
+      (scope === 'all' ? 'Todos os ' + all.length + ' projetos, incluindo os concluídos.' : 'Só os ' + openAll.length + ' projetos em aberto (em andamento, em revisão e em conferência).') +
       '</p></div>' +
       '<div class="seg" style="width:260px"><button type="button" data-scope="open" class="' + (scope === 'open' ? 'on' : '') + '">Só abertos</button>' +
       '<button type="button" data-scope="all" class="' + (scope === 'all' ? 'on' : '') + '">Todos</button></div></div>';
 
     // Resumo
     html += '<div class="kpis">' +
-      '<div class="kpi"><div class="kpi-label">Projetos</div><div class="kpi-value">' + list.length + '</div><div class="kpi-sub">' + openAll.length + ' abertos · ' + doneCount + ' concluídos</div></div>' +
+      '<div class="kpi"><div class="kpi-label">Projetos</div><div class="kpi-value">' + list.length + '</div><div class="kpi-sub">' + openAll.length + ' em aberto · ' + waitCount + ' aguardando · ' + doneCount + ' concluídos</div></div>' +
       '<div class="kpi"><div class="kpi-label">Andamento médio</div><div class="kpi-value">' + avg + '%</div>' + progHTML(avg) + '</div>' +
       '<div class="kpi' + (late.length ? ' alert' : '') + '"><div class="kpi-label">Atrasados</div><div class="kpi-value">' + late.length + '</div><div class="kpi-sub">projetos abertos com prazo vencido</div></div>' +
       '<div class="kpi' + (soon.length ? ' warn' : '') + '"><div class="kpi-label">Vencem em 7 dias</div><div class="kpi-value">' + soon.length + '</div><div class="kpi-sub">projetos abertos</div></div>' +
@@ -4026,7 +4032,7 @@
 
     if (!list.length) {
       statsEl.innerHTML = html + '<div class="empty"><strong>Nenhum projeto aqui</strong>' +
-        (scope === 'open' ? 'Todos os projetos estão concluídos. Clique em "Todos" para ver o histórico.' : 'Crie projetos para ver as estatísticas.') + '</div>';
+        (scope === 'open' ? 'Nenhum projeto em andamento, em revisão ou em conferência. Clique em "Todos" para ver o resto.' : 'Crie projetos para ver as estatísticas.') + '</div>';
       return;
     }
 
@@ -4040,7 +4046,7 @@
       '</div></div>';
 
     // Por status
-    var statusItems = scope === 'open' ? state.statuses.filter(function (s) { return !isDoneStatus(s.id); }) : state.statuses;
+    var statusItems = scope === 'open' ? state.statuses.filter(function (s) { return isOpenStatus(s.id); }) : state.statuses;
     html += '<div class="st-card"><h3>Por status</h3><p class="sub">Em que etapa os projetos estão, na ordem das suas caixas.</p><div class="bars">' +
       breakdown(list, statusItems, 'statusId', 'status', false) + '</div></div>';
 
@@ -4051,7 +4057,7 @@
 
     // Por prioridade
     var top = state.priorities[0];
-    var parked = top ? openAll.filter(function (p) {
+    var parked = top ? all.filter(function (p) {
       if (p.priorityId !== top.id) return false;
       var st = byId(state.statuses, p.statusId);
       if (!st) return true;
@@ -4068,7 +4074,7 @@
     // Por responsável
     var people = state.collaborators.map(function (c) {
       var mine = list.filter(function (p) { return p.responsibles.indexOf(c.id) >= 0; });
-      var mineOpen = mine.filter(function (p) { return !isDoneStatus(p.statusId); });
+      var mineOpen = mine.filter(function (p) { return isOpenStatus(p.statusId); });
       var lateN = mineOpen.filter(function (p) { var d = daysUntil(p.deadline); return d !== null && d < 0; }).length;
       return { c: c, total: mine.length, open: mineOpen.length, avg: avgProgress(mine), late: lateN };
     });
