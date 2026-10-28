@@ -150,7 +150,12 @@
   .msg-h { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-bottom: 3px; }
   .msg-h b { color: var(--text); }
   .msg-t { white-space: pre-wrap; word-break: break-word; font-size: 13.5px; }
-  .msg-new { display: flex; gap: 8px; align-items: flex-end; }
+  .msg-new { display: flex; gap: 8px; align-items: flex-end; position: relative; }
+  .mention { color: var(--primary); font-weight: 600; }
+  .mention.me { background: var(--primary-soft); border-radius: 4px; padding: 0 3px; }
+  .mention-pop { position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 70; min-width: 200px; max-height: 220px; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-lg); padding: 4px; }
+  .mention-pop button { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 7px 10px; border: 0; border-radius: 7px; background: transparent; color: inherit; font: inherit; font-size: 13px; cursor: pointer; }
+  .mention-pop button.on, .mention-pop button:hover { background: var(--hover); }
   .msg-new textarea { flex: 1; min-height: 40px; }
   .log-line { font-size: 12.5px; color: var(--muted); padding: 2px 4px; line-height: 1.4; }
   .log-line b { color: var(--text); font-weight: 600; }
@@ -1242,6 +1247,7 @@
         comments: (Array.isArray(p.comments) ? p.comments : []).filter(function (c) { return c && c.text; }).map(function (c) {
           var o = { id: String(c.id || ''), by: String(c.by || ''), at: String(c.at || ''), text: String(c.text), kind: c.kind ? String(c.kind) : '' };
           if (c.f) o.f = String(c.f);
+          if (Array.isArray(c.notify) && c.notify.length) o.notify = c.notify.map(String);
           if (c.from !== undefined) o.from = String(c.from);
           return o;
         }),
@@ -3533,17 +3539,43 @@
   function confStatusId() { var st = state.statuses.filter(function (x) { return norm(x.name).indexOf('confer') >= 0; })[0]; return st ? st.id : ''; }
   function doneStatusId() { var st = state.statuses.filter(function (x) { return isDoneStatus(x.id); })[0]; return st ? st.id : ''; }
   function pendingAdj(p) { return (p.adjustments || []).filter(function (a) { return !a.done; }).length; }
-  function addComment(p, text, kind) {
+  function addComment(p, text, kind, notify) {
     p.comments = p.comments || [];
-    p.comments.push({ id: uid(), by: currentUser() || '', at: nowISO(), text: text, kind: kind || '' });
+    var c = { id: uid(), by: currentUser() || '', at: nowISO(), text: text, kind: kind || '' };
+    var me = currentUser();
+    var list = (notify || []).filter(function (id, i, a) { return id && id !== me && a.indexOf(id) === i; });
+    if (list.length) c.notify = list;
+    p.comments.push(c);
+  }
+  /* Menções: @Nome do colaborador dentro do texto */
+  function mentionsIn(text) {
+    var low = String(text || '').toLowerCase();
+    return state.collaborators.filter(function (c) {
+      var i = low.indexOf('@' + c.name.toLowerCase());
+      if (i < 0) return false;
+      var nx = low.charAt(i + c.name.length + 1);
+      return !nx || !/[a-z0-9à-ú]/i.test(nx);
+    }).map(function (c) { return c.id; });
+  }
+  function msgTextHTML(text) {
+    var me = currentUser();
+    var names = state.collaborators.slice().sort(function (a, b) { return b.name.length - a.name.length; });
+    var out = esc(text);
+    names.forEach(function (c) {
+      out = out.split('@' + esc(c.name)).join('\u0000' + c.id + '\u0001');
+    });
+    return out.replace(/\u0000([^\u0001]+)\u0001/g, function (_, id) {
+      var c = byId(state.collaborators, id);
+      return '<span class="mention' + (id === me ? ' me' : '') + '">@' + esc(c ? c.name : '') + '</span>';
+    });
   }
   function flagsHTML(p) {
     var n = pendingAdj(p), c = (p.comments || []).filter(function (m) { return m.kind !== 'sys' && m.kind !== 'log'; }).length;
     var nw = hasNews(p);
-    if (!n && !c && !nw) return '';
+    if (!n && !nw) return '';
     return '<div class="p-flags">' +
       (n ? '<span class="flag adj" title="Ajustes pendentes">⚠ ' + n + ' ajuste' + (n > 1 ? 's' : '') + '</span>' : '') +
-      (nw ? '<span class="flag newc" title="Mensagem nova">● novo</span>' : (c ? '<span class="flag msgc" title="Mensagens">💬 ' + c + '</span>' : '')) +
+      (nw ? '<span class="flag newc" title="Notificação nova">● novo</span>' : '') +
       '</div>';
   }
 
@@ -3563,23 +3595,24 @@
     if (!currentUser()) return;
     var m = seenMap(); m.p[pid] = nowISO(); writeLocal(seenKey(), m);
   }
-  function lastOtherMsg(p) {
+  /* Notificação = comentário que lista o usuário em "notify" (menção ou devolução com ajustes) */
+  function lastNotif(p) {
     var me = currentUser();
-    var list = (p.comments || []).filter(function (c) { return c.by !== me && c.kind !== 'log'; });
+    var list = (p.comments || []).filter(function (c) { return c.by !== me && Array.isArray(c.notify) && c.notify.indexOf(me) >= 0; });
     return list.length ? list[list.length - 1] : null;
-  }
-  function involved(p) {
-    var me = currentUser();
-    return p.responsibles.indexOf(me) >= 0 || (p.comments || []).some(function (c) { return c.by === me; });
   }
   function hasNews(p) {
     var me = currentUser();
-    if (!me || !involved(p)) return false;
-    var last = lastOtherMsg(p);
+    if (!me) return false;
+    var last = lastNotif(p);
     if (!last) return false;
     var m = seenMap();
     var ref = m.p[p.id] || m.since;
     return last.at > ref;
+  }
+  function notifText(m) {
+    if (m.kind === 'sys') return whoName(m.by) + ' devolveu com ajustes';
+    return whoName(m.by) + ' mencionou você: ' + m.text;
   }
   var bellOpen = false;
   function renderBell() {
@@ -3589,7 +3622,7 @@
     btn.hidden = !(me && ghConfigured());
     if (btn.hidden) { $('#bellPop').hidden = true; return; }
     seenMap();
-    var news = state.projects.filter(hasNews).sort(function (a, b) { return lastOtherMsg(b).at.localeCompare(lastOtherMsg(a).at); });
+    var news = state.projects.filter(hasNews).sort(function (a, b) { return lastNotif(b).at.localeCompare(lastNotif(a).at); });
     var nEl = $('#bellN');
     nEl.hidden = !news.length; nEl.textContent = news.length;
     var pop = $('#bellPop');
@@ -3597,8 +3630,8 @@
     if (!bellOpen) return;
     pop.innerHTML = '<div class="bell-head"><span>Novidades</span>' + (news.length ? '<button type="button" data-bell-all>Marcar tudo como visto</button>' : '') + '</div>' +
       (news.length ? news.map(function (p) {
-        var m = lastOtherMsg(p);
-        return '<button type="button" class="bell-item" data-bell="' + esc(p.id) + '"><b>' + esc(p.name) + '</b><span>' + esc(whoName(m.by)) + ': ' + esc(m.text) + '</span><span>' + fmtWhen(m.at) + '</span></button>';
+        var m = lastNotif(p);
+        return '<button type="button" class="bell-item" data-bell="' + esc(p.id) + '"><b>' + esc(p.name) + '</b><span>' + esc(notifText(m)) + '</span><span>' + fmtWhen(m.at) + '</span></button>';
       }).join('') : '<div class="bell-empty">Nada novo por aqui.</div>');
   }
   $('#bellBtn').addEventListener('click', function (e) { e.stopPropagation(); bellOpen = !bellOpen; renderBell(); });
@@ -3658,9 +3691,9 @@
     html += '<div class="talk-title">Mensagens e histórico</div>' +
       '<div class="msgs" id="talkMsgs">' + (msgs.length ? msgs.map(function (m) {
         if (m.kind === 'log') return '<div class="log-line"><b>' + esc(whoName(m.by)) + '</b> ' + esc(m.text.charAt(0).toLowerCase() + m.text.slice(1)) + ' <span>' + fmtWhen(m.at) + '</span></div>';
-        return '<div class="msg' + (m.kind === 'sys' ? ' sys' : (m.by && m.by === me ? ' mine' : '')) + '"><div class="msg-h"><b>' + esc(whoName(m.by)) + '</b>' + fmtWhen(m.at) + '</div><div class="msg-t">' + esc(m.text) + '</div></div>';
+        return '<div class="msg' + (m.kind === 'sys' ? ' sys' : (m.by && m.by === me ? ' mine' : '')) + '"><div class="msg-h"><b>' + esc(whoName(m.by)) + '</b>' + fmtWhen(m.at) + '</div><div class="msg-t">' + msgTextHTML(m.text) + '</div></div>';
       }).join('') : '<div class="talk-empty">Nenhuma mensagem ainda.</div>') + '</div>' +
-      '<div class="msg-new"><textarea id="talk-text" rows="1" placeholder="Escreva uma mensagem…"></textarea><button type="button" class="btn btn-primary sm" data-talk="send">Enviar</button></div>';
+      '<div class="msg-new"><textarea id="talk-text" rows="1" placeholder="Mensagem (@ para mencionar)"></textarea><div class="mention-pop" id="mentionPop" hidden></div><button type="button" class="btn btn-primary sm" data-talk="send">Enviar</button></div>';
     box.innerHTML = html;
     var ml = $('#talkMsgs'); if (ml) ml.scrollTop = ml.scrollHeight;
     var tt = $('#talk-text'); if (tt) { tt.classList.add('autogrow'); tt.addEventListener('input', function () { autoGrow(tt); }); }
@@ -3679,7 +3712,7 @@
     if (a === 'send') {
       var t = $('#talk-text').value.trim();
       if (!t) { $('#talk-text').focus(); return; }
-      addComment(p, t);
+      addComment(p, t, '', mentionsIn(t));
       talkChanged(p);
       var t2 = $('#talk-text'); if (t2) t2.focus();
     } else if (a === 'approve') {
@@ -3703,7 +3736,7 @@
       p.adjustments = (p.adjustments || []).concat(lines.map(function (x) { return { id: uid(), text: x, by: me, at: at, done: false, doneBy: '', doneAt: '' }; }));
       skipStatusLog[p.id] = true;
       changeStatus(p, to);
-      addComment(p, 'Devolveu com ' + lines.length + ' ajuste' + (lines.length > 1 ? 's' : '') + ':\n' + lines.map(function (x) { return '• ' + x; }).join('\n') + '\nVoltou para ' + byId(state.statuses, to).name + '.', 'sys');
+      addComment(p, 'Devolveu com ' + lines.length + ' ajuste' + (lines.length > 1 ? 's' : '') + ':\n' + lines.map(function (x) { return '• ' + x; }).join('\n') + '\nVoltou para ' + byId(state.statuses, to).name + '.', 'sys', p.responsibles);
       syncStatusFields(p);
       talkUi.ret = false;
       talkChanged(p, 'Projeto devolvido com ajustes.');
@@ -3731,6 +3764,63 @@
       msg = 'Todos os ajustes feitos. Projeto voltou para a conferência.';
     }
     talkChanged(p, msg);
+  });
+  /* Lista de @menção enquanto digita */
+  var mention = { open: false, items: [], idx: 0, start: 0 };
+  function mentionCtx(ta) {
+    var pos = ta.selectionStart, before = ta.value.slice(0, pos);
+    var at = before.lastIndexOf('@');
+    if (at < 0 || (at > 0 && /\w/.test(before.charAt(at - 1)))) return null;
+    var q = before.slice(at + 1);
+    if (q.length > 30 || /\n/.test(q)) return null;
+    return { start: at, q: q };
+  }
+  function renderMention(ta) {
+    var pop = $('#mentionPop');
+    if (!pop) return;
+    var ctx = mentionCtx(ta);
+    var me = currentUser();
+    var items = ctx ? state.collaborators.filter(function (c) {
+      return c.id !== me && norm(c.name).indexOf(norm(ctx.q)) === 0;
+    }) : [];
+    mention.open = !!(ctx && items.length);
+    if (!mention.open) { pop.hidden = true; return; }
+    mention.items = items; mention.start = ctx.start;
+    if (mention.idx >= items.length) mention.idx = 0;
+    pop.innerHTML = items.map(function (c, i) {
+      return '<button type="button" data-mention="' + esc(c.id) + '" class="' + (i === mention.idx ? 'on' : '') + '"><span class="dot" style="background:' + esc(c.color) + '"></span>' + esc(c.name) + '</button>';
+    }).join('');
+    pop.hidden = false;
+  }
+  function pickMention(id) {
+    var ta = $('#talk-text'), c = byId(state.collaborators, id);
+    if (!ta || !c) return;
+    var pos = ta.selectionStart;
+    var ins = '@' + c.name + ' ';
+    ta.value = ta.value.slice(0, mention.start) + ins + ta.value.slice(pos);
+    var np = mention.start + ins.length;
+    ta.focus(); ta.setSelectionRange(np, np);
+    mention.open = false; mention.idx = 0; $('#mentionPop').hidden = true;
+    autoGrow(ta);
+  }
+  $('#talkBox').addEventListener('input', function (e) { if (e.target.id === 'talk-text') { mention.idx = 0; renderMention(e.target); } });
+  $('#talkBox').addEventListener('mousedown', function (e) {
+    var b = e.target.closest('[data-mention]');
+    if (b) { e.preventDefault(); pickMention(b.dataset.mention); }
+  });
+  $('#talkBox').addEventListener('focusout', function (e) {
+    if (e.target.id === 'talk-text') setTimeout(function () { var pop = $('#mentionPop'); if (pop) pop.hidden = true; mention.open = false; }, 150);
+  });
+  $('#talkBox').addEventListener('keydown', function (e) {
+    if (e.target.id === 'talk-text' && mention.open) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        mention.idx = (mention.idx + (e.key === 'ArrowDown' ? 1 : -1) + mention.items.length) % mention.items.length;
+        renderMention(e.target); return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); pickMention(mention.items[mention.idx].id); return; }
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); mention.open = false; $('#mentionPop').hidden = true; return; }
+    }
   });
   $('#talkBox').addEventListener('keydown', function (e) {
     if (e.target.id === 'talk-text' && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
@@ -4309,7 +4399,7 @@
   });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.5.2';
+  var APP_VERSION = '2.6.0';
   $('#verTxt').textContent = 'v' + APP_VERSION + (IS_PROD ? '' : '-teste');
 
   purgeRefs();
