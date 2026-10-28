@@ -783,6 +783,20 @@
   .add-row { display: flex; gap: 8px; }
   .add-row .input { flex: 1; min-width: 0; }
   .data-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .au-tools { display: grid; grid-template-columns: 180px 180px 1fr; gap: 8px; margin: 12px 0; }
+  .au-list { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .au-row { display: grid; grid-template-columns: 92px 110px 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px; border-left: 3px solid var(--border); }
+  .au-row:last-child { border-bottom: 0; }
+  .au-row.k-conf { border-left-color: var(--warn); }
+  .au-row.k-cfg { border-left-color: #8b5cf6; }
+  .au-row.k-user { border-left-color: var(--danger); }
+  .au-row.k-proj { border-left-color: var(--primary); }
+  .au-when { color: var(--muted); font-size: 12px; }
+  .au-who { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .au-txt { min-width: 0; word-break: break-word; }
+  .au-tag { font-size: 11.5px; color: var(--muted); }
+  .au-list + .nc-pager { border-top: 0; padding: 10px 0 0; }
+  @media (max-width: 760px) { .au-tools { grid-template-columns: 1fr 1fr; } .au-tools input { grid-column: 1 / -1; } .au-row { grid-template-columns: 1fr auto; } .au-txt { grid-column: 1 / -1; } }
   .items-empty { padding: 14px; text-align: center; font-size: 13px; color: var(--muted); border: 1px dashed var(--border); border-radius: 8px; margin-bottom: 12px; }
 
   /* ---------- Seletor de cor ---------- */
@@ -1333,6 +1347,16 @@
     if (['projects', 'board', 'stats', 'settings'].indexOf(out.tab) < 0) out.tab = 'projects';
     out.statsScope = out.statsScope === 'all' ? 'all' : 'open';
     if (typeof out.title !== 'string' || !out.title.trim()) out.title = DEFAULT_TITLE;
+    out.audit = pruneAudit((Array.isArray(d.audit) ? d.audit : []).filter(function (a) { return a && a.id && a.at && a.txt; }).map(function (a) {
+      var o = { id: String(a.id), at: String(a.at), by: String(a.by || ''), k: String(a.k || 'proj'), txt: String(a.txt) };
+      if (a.pid) o.pid = String(a.pid);
+      if (a.pname) o.pname = String(a.pname);
+      if (a.f) o.f = String(a.f);
+      if (a.from !== undefined) o.from = String(a.from);
+      if (a.snap && typeof a.snap === 'object') o.snap = a.snap;
+      if (a.restored) o.restored = true;
+      return o;
+    }));
     if (out.theme !== 'dark' && out.theme !== 'light') out.theme = null;
     return out;
   }
@@ -1344,7 +1368,7 @@
   }
 
   /* Dados que vão para o GitHub (iguais em todo aparelho) e preferências deste aparelho */
-  var SHARED_KEYS = ['version', 'title', 'priorities', 'statuses', 'types', 'collaborators', 'projects', 'sort'];
+  var SHARED_KEYS = ['version', 'title', 'priorities', 'statuses', 'types', 'collaborators', 'projects', 'sort', 'audit'];
   var LOCAL_KEYS = ['theme', 'tab', 'filters', 'statsScope', 'collapsed'];
   /* O mesmo arquivo roda no site oficial e no de teste: cada um usa nomes e dados próprios */
   var SITE_DIR = (location.pathname.split('/').filter(Boolean)[0] || '').toLowerCase();
@@ -2841,8 +2865,73 @@
     closePop();
     showTab();
     if (!isAdmin()) { settingsEl.innerHTML = ''; return; }
-    settingsEl.innerHTML = githubPanel() + (ghConfigured() && site ? usersPanel() : '') + LISTS.map(listPanel).join('') + dataPanel();
+    settingsEl.innerHTML = githubPanel() + (ghConfigured() && site ? usersPanel() : '') + LISTS.map(listPanel).join('') + dataPanel() + auditPanel();
+    renderAuditList();
   }
+  var auditUi = { by: '', k: '', q: '', page: 0 };
+  var AUDIT_KINDS = { proj: 'Projetos', conf: 'Conferência', cfg: 'Configurações', user: 'Usuários' };
+  var AUDIT_PER = 15;
+  function auditPanel() {
+    var users = {};
+    (state.audit || []).forEach(function (a) { users[a.by] = 1; });
+    return '<div class="panel" data-audit style="grid-column: 1 / -1"><h3>Histórico de atividades</h3>' +
+      '<p class="sub">Tudo que cada pessoa fez no gestor nos últimos ' + AUDIT_DAYS + ' dias. Só administradores veem. Projeto excluído pode ser restaurado aqui enquanto estiver no histórico.</p>' +
+      '<div class="au-tools"><select class="input" data-au="by"><option value="">Todos os usuários</option>' +
+      Object.keys(users).map(function (id) { return '<option value="' + esc(id) + '"' + (auditUi.by === id ? ' selected' : '') + '>' + esc(whoName(id)) + '</option>'; }).join('') + '</select>' +
+      '<select class="input" data-au="k"><option value="">Todas as ações</option>' +
+      Object.keys(AUDIT_KINDS).map(function (k) { return '<option value="' + k + '"' + (auditUi.k === k ? ' selected' : '') + '>' + AUDIT_KINDS[k] + '</option>'; }).join('') + '</select>' +
+      '<input type="search" class="input" data-au="q" placeholder="Buscar projeto ou texto…" value="' + esc(auditUi.q) + '"></div>' +
+      '<div class="au-list" id="auList"></div><div class="nc-pager" id="auPager"></div></div>';
+  }
+  function renderAuditList() {
+    var el = $('#auList');
+    if (!el) return;
+    var q = norm(auditUi.q.trim());
+    var list = (state.audit || []).slice().reverse().filter(function (a) {
+      if (auditUi.by && a.by !== auditUi.by) return false;
+      if (auditUi.k && a.k !== auditUi.k) return false;
+      return !q || norm((a.pname || '') + ' ' + a.txt + ' ' + whoName(a.by)).indexOf(q) >= 0;
+    });
+    var pages = Math.max(1, Math.ceil(list.length / AUDIT_PER));
+    if (auditUi.page >= pages) auditUi.page = pages - 1;
+    var from = auditUi.page * AUDIT_PER, slice = list.slice(from, from + AUDIT_PER);
+    el.innerHTML = slice.length ? slice.map(function (a) {
+      var canRestore = a.snap && !a.restored && !byId(state.projects, a.pid);
+      return '<div class="au-row k-' + esc(a.k) + '"><span class="au-when">' + fmtWhen(a.at) + '</span>' +
+        '<span class="au-who">' + esc(whoName(a.by)) + '</span>' +
+        '<span class="au-txt">' + (a.pname ? '<b>' + esc(a.pname) + '</b> · ' : '') + esc(a.txt) + '</span>' +
+        (canRestore ? '<button type="button" class="btn sm" data-au-restore="' + esc(a.id) + '">Restaurar</button>' : (a.snap && a.restored ? '<span class="au-tag">restaurado</span>' : '')) +
+        '</div>';
+    }).join('') : '<div class="items-empty">' + ((state.audit || []).length ? 'Nada encontrado com esses filtros.' : 'Nenhuma atividade registrada ainda.') + '</div>';
+    var btns = '', startP = Math.max(0, Math.min(auditUi.page - 2, pages - 5));
+    for (var i = startP; i < Math.min(pages, startP + 5); i++) btns += '<button type="button" data-au-page="' + i + '" class="' + (i === auditUi.page ? 'on' : '') + '">' + (i + 1) + '</button>';
+    $('#auPager').innerHTML = '<span>' + (list.length ? 'Mostrando ' + (from + 1) + ' a ' + (from + slice.length) + ' de ' + list.length : '') + '</span>' +
+      (pages > 1 ? '<div class="pg"><button type="button" data-au-page="' + (auditUi.page - 1) + '"' + (auditUi.page ? '' : ' disabled') + '>«</button>' + btns +
+      '<button type="button" data-au-page="' + (auditUi.page + 1) + '"' + (auditUi.page < pages - 1 ? '' : ' disabled') + '>»</button></div>' : '');
+  }
+  settingsEl.addEventListener('input', function (e) {
+    var f = e.target.closest('[data-au]');
+    if (!f) return;
+    auditUi[f.dataset.au] = f.value; auditUi.page = 0; renderAuditList();
+  });
+  settingsEl.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-au-page]');
+    if (b && !b.disabled) { auditUi.page = Number(b.dataset.auPage); renderAuditList(); return; }
+    var r = e.target.closest('[data-au-restore]');
+    if (!r) return;
+    var a = (state.audit || []).filter(function (x) { return x.id === r.dataset.auRestore; })[0];
+    if (!a || !a.snap) return;
+    confirmBox('Restaurar o projeto ' + a.pname + '?', 'Ele volta para a lista como estava quando foi excluído.', 'Restaurar').then(function (ok) {
+      if (!ok || byId(state.projects, a.pid)) return;
+      var pr = normalize({ projects: [JSON.parse(JSON.stringify(a.snap))] }).projects[0];
+      if (!pr) return;
+      a.restored = true;
+      restoredIds[pr.id] = true;
+      state.projects.push(pr);
+      purgeRefs(); save(); refreshData(); renderSettings();
+      toast('Projeto ' + pr.name + ' restaurado.');
+    });
+  });
 
   function usersPanel() {
     var users = keyUsers(), admins = keyAdmins(), me = currentUser();
@@ -2894,6 +2983,7 @@
         btn.disabled = true;
         setUserPass(gh.cfg.token, uidg, cg ? cg.name : '', FIRST_PASS, true).then(function (r) {
           toast(r.ok ? (action === 'u-reset' ? 'Senha de ' + cg.name + ' voltou para 0303.' : 'Acesso liberado. ' + cg.name + ' entra com a senha 0303.') : 'Não consegui salvar agora. Tente de novo.');
+          if (r.ok) auditNow('user', action === 'u-reset' ? 'Redefiniu a senha de ' + cg.name + ' para 0303.' : 'Liberou o acesso de ' + cg.name + '.');
           renderSettings();
         });
       };
@@ -2925,7 +3015,7 @@
         updateKeyFile(gh.cfg.token, function (b) {
           if (b.users) delete b.users[uid0];
           if (Array.isArray(b.admins)) b.admins = b.admins.filter(function (x) { return x !== uid0; });
-        }).then(function (r) { toast(r.ok ? 'Acesso removido.' : 'Não consegui salvar agora. Tente de novo.'); renderSettings(); });
+        }).then(function (r) { toast(r.ok ? 'Acesso removido.' : 'Não consegui salvar agora. Tente de novo.'); if (r.ok) auditNow('user', 'Apagou o acesso de ' + nm + '.'); renderSettings(); });
       });
       return;
     }
@@ -2933,7 +3023,7 @@
       confirmBox('Desativar a senha da empresa?', 'Depois disso, só entra quem tem usuário e senha próprios. Quem já está conectado continua conectado até sair.', 'Desativar').then(function (ok) {
         if (!ok) return;
         updateKeyFile(gh.cfg.token, function (b) { delete b.lock; })
-          .then(function (r) { toast(r.ok ? 'Senha da empresa desativada.' : 'Não consegui salvar agora. Tente de novo.'); renderSettings(); });
+          .then(function (r) { toast(r.ok ? 'Senha da empresa desativada.' : 'Não consegui salvar agora. Tente de novo.'); if (r.ok) auditNow('user', 'Desativou a senha da empresa.'); renderSettings(); });
       });
       return;
     }
@@ -3076,6 +3166,7 @@
       b.admins = a;
     }).then(function (r) {
       if (!r.ok) { toast('Não consegui salvar agora. Tente de novo.'); }
+      else { var cu = byId(state.collaborators, uid1); auditNow('user', (on ? 'Deu' : 'Tirou') + ' acesso de administrador ' + (on ? 'para ' : 'de ') + (cu ? cu.name : 'usuário') + '.'); }
       showTab(); renderSettings();
     });
   });
@@ -3193,8 +3284,11 @@
         var data = JSON.parse(reader.result);
         if (!data || !Array.isArray(data.projects)) throw new Error('formato');
         var prefs = pick(state, LOCAL_KEYS);
+        var keepAudit = state.audit || [];
         state = normalize(Object.assign({}, data, prefs));
+        state.audit = keepAudit;
         takeSnap();
+        audit('cfg', 'Importou um backup (' + state.projects.length + ' projetos).');
         state.tab = 'settings';
         purgeRefs(); save(); renderAll();
         toast(gh.ready ? 'Backup importado. Salvando no GitHub…' : 'Backup importado neste navegador. Conecte o GitHub para salvar lá.');
@@ -3502,14 +3596,74 @@
   /* =========================================================
      Histórico automático: registra quem mudou o quê
      ========================================================= */
-  var snap = {}, logTimer = null, skipStatusLog = {};
+  /* ---------- Histórico de atividades (só administradores veem) ---------- */
+  var AUDIT_DAYS = 2; /* mudar também em pruneAudit */
+  function pruneAudit(list) { /* roda antes de AUDIT_DAYS existir */
+    var lim = new Date(Date.now() - 2 * 864e5).toISOString(); /* guarda 2 dias */
+    return list.filter(function (a) { return a.at >= lim; });
+  }
+  function audit(k, txt, p, opt) {
+    state.audit = state.audit || [];
+    var me = currentUser() || '';
+    opt = opt || {};
+    if (opt.f === 'progress' && p) {
+      var last = state.audit[state.audit.length - 1];
+      if (last && last.f === 'progress' && last.pid === p.id && last.by === me && (Date.now() - new Date(last.at).getTime()) < 10 * 60000) {
+        if (String(last.from) === String(p.progress)) { state.audit.pop(); return; }
+        last.txt = 'Mudou o andamento de ' + last.from + '% para ' + p.progress + '%.';
+        last.at = nowISO();
+        return;
+      }
+    }
+    var e = { id: uid(), at: nowISO(), by: me, k: k, txt: txt };
+    if (p) { e.pid = p.id; e.pname = p.name; }
+    if (opt.f) e.f = opt.f;
+    if (opt.from !== undefined) e.from = String(opt.from);
+    if (opt.snap) e.snap = opt.snap;
+    state.audit.push(e);
+    state.audit = pruneAudit(state.audit);
+  }
+  /* para ações fora dos dados (usuários e senhas) */
+  function auditNow(k, txt) { audit(k, txt); save(); if (state.tab === 'settings') renderAuditList(); }
+
+  var snap = {}, fullSnap = {}, cfgSnap = null, logTimer = null, skipStatusLog = {}, restoredIds = {};
+  var AUDIT_LISTS = [['priorities', 'a prioridade'], ['statuses', 'o status'], ['types', 'a disciplina'], ['collaborators', 'o usuário']];
+  function cfgOf() {
+    var o = { title: state.title };
+    AUDIT_LISTS.forEach(function (l) {
+      o[l[0]] = state[l[0]].map(function (x) { return { id: x.id, name: x.name, color: x.color, clearPriority: x.clearPriority }; });
+    });
+    return o;
+  }
+  function logCfgChanges() {
+    if (!cfgSnap) return false;
+    var o = cfgSnap, n = cfgOf(), ch = false;
+    if (o.title !== n.title) { audit('cfg', 'Mudou o título do gestor de "' + o.title + '" para "' + n.title + '".'); ch = true; }
+    AUDIT_LISTS.forEach(function (l) {
+      var a = o[l[0]], b = n[l[0]], noun = l[1];
+      var ida = a.map(function (x) { return x.id; }), idb = b.map(function (x) { return x.id; });
+      b.forEach(function (x) {
+        var old = a.filter(function (y) { return y.id === x.id; })[0];
+        if (!old) { audit('cfg', 'Criou ' + noun + ' "' + x.name + '".'); ch = true; return; }
+        if (old.name !== x.name) { audit('cfg', 'Renomeou ' + noun + ' "' + old.name + '" para "' + x.name + '".'); ch = true; }
+        if (old.color !== x.color) { audit('cfg', 'Mudou a cor d' + noun.slice(0, 1) + ' ' + noun.slice(2) + ' "' + x.name + '".'); ch = true; }
+        if (old.clearPriority !== x.clearPriority) { audit('cfg', (x.clearPriority ? 'Ligou' : 'Desligou') + ' "Zera prioridade" no status "' + x.name + '".'); ch = true; }
+      });
+      a.forEach(function (x) { if (idb.indexOf(x.id) < 0) { audit('cfg', 'Apagou ' + noun + ' "' + x.name + '".'); ch = true; } });
+      var keep = ida.filter(function (id) { return idb.indexOf(id) >= 0; });
+      var keepB = idb.filter(function (id) { return ida.indexOf(id) >= 0; });
+      if (keep.join() !== keepB.join()) { audit('cfg', 'Mudou a ordem d' + (l[0] === 'statuses' ? 'os status' : (l[0] === 'types' ? 'as disciplinas' : (l[0] === 'priorities' ? 'as prioridades' : 'os usuários'))) + '.'); ch = true; }
+    });
+    return ch;
+  }
   function snapOf(p) {
     return { name: p.name, statusId: p.statusId, priorityId: p.priorityId, deadline: p.deadline, progress: p.progress,
       responsibles: p.responsibles.slice(), typeIds: p.typeIds.slice(), desc: p.desc, notes: p.notes, client: p.client, location: p.location };
   }
   function takeSnap() {
-    snap = {};
-    state.projects.forEach(function (p) { snap[p.id] = snapOf(p); });
+    snap = {}; fullSnap = {};
+    state.projects.forEach(function (p) { snap[p.id] = snapOf(p); fullSnap[p.id] = JSON.parse(JSON.stringify(p)); });
+    cfgSnap = cfgOf();
   }
   function scheduleLog() {
     clearTimeout(logTimer);
@@ -3518,6 +3672,7 @@
   function nameIn(list, id, empty) { var x = byId(list, id); return x ? x.name : empty; }
   function fmtDate(d) { if (!d) return ''; var a = d.split('-'); return a.length === 3 ? a[2] + '/' + a[1] + '/' + a[0] : d; }
   function pushLog(p, text, f, from) {
+    audit('proj', text, p, { f: f, from: from });
     var me = currentUser() || '';
     var last = p.comments && p.comments[p.comments.length - 1];
     if (f === 'progress' && last && last.kind === 'log' && last.f === 'progress' && last.by === me && (Date.now() - new Date(last.at).getTime()) < 10 * 60000) {
@@ -3536,7 +3691,7 @@
     var changed = false;
     state.projects.forEach(function (p) {
       var o = snap[p.id];
-      if (!o) { pushLog(p, 'Criou o projeto.'); changed = true; return; }
+      if (!o) { pushLog(p, restoredIds[p.id] ? 'Restaurou o projeto (estava excluído).' : 'Criou o projeto.'); changed = true; return; }
       var stChanged = o.statusId !== p.statusId;
       if (stChanged && !skipStatusLog[p.id]) {
         pushLog(p, 'Mudou o status de ' + nameIn(state.statuses, o.statusId, 'Sem status') + ' para ' + nameIn(state.statuses, p.statusId, 'Sem status') + '.'); changed = true;
@@ -3566,9 +3721,16 @@
       if (o.location !== p.location) edits.push('o local');
       if (edits.length) { pushLog(p, 'Editou ' + edits.join(', ').replace(/, ([^,]*)$/, ' e $1') + '.'); changed = true; }
     });
-    skipStatusLog = {};
+    Object.keys(fullSnap).forEach(function (id) {
+      if (byId(state.projects, id)) return;
+      audit('proj', 'Excluiu o projeto.', fullSnap[id], { snap: fullSnap[id] });
+      changed = true;
+    });
+    if (logCfgChanges()) changed = true;
+    skipStatusLog = {}; restoredIds = {};
     takeSnap();
     if (changed) {
+      renderAuditList();
       if (!modalEl.hidden && editingId) renderTalk();
       refreshData();
     }
@@ -3605,6 +3767,7 @@
     var list = (notify || []).filter(function (id, i, a) { return id && id !== me && a.indexOf(id) === i; });
     if (list.length) c.notify = list;
     p.comments.push(c);
+    if (kind === 'sys') audit('conf', text.replace(/\n/g, ' '), p);
   }
   /* Menções: @Nome do colaborador dentro do texto */
   function mentionsIn(text) {
@@ -3892,6 +4055,7 @@
     var adj = (p.adjustments || []).filter(function (x) { return x.id === cb.dataset.adj; })[0];
     if (!adj) return;
     adj.done = cb.checked;
+    audit('conf', (cb.checked ? 'Marcou como feito o ajuste: ' : 'Desmarcou o ajuste: ') + adj.text, p);
     adj.doneBy = cb.checked ? (currentUser() || '') : '';
     adj.doneAt = cb.checked ? nowISO() : '';
     var msg = '';
@@ -4538,7 +4702,7 @@
   });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.7.0';
+  var APP_VERSION = '2.8.0';
   $('#verTxt').textContent = 'v' + APP_VERSION + (IS_PROD ? '' : '-teste');
 
   purgeRefs();
