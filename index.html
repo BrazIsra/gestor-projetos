@@ -233,18 +233,8 @@
   textarea { resize: vertical; }
   input[type="date"] { min-height: 38px; }
 
-  main { padding: 24px; }
-  .app-foot { padding: 8px 24px 20px; text-align: center; font-size: 11.5px; color: var(--muted); opacity: .7; }
-  .ver-btn { border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 2px; }
-  .ver-btn:hover { color: var(--primary); opacity: 1; }
-  .news-box { max-width: 560px; }
-  .news-body { padding: 8px 20px 20px; max-height: 70vh; overflow-y: auto; }
-  .news-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
-  .news-item:last-child { border-bottom: 0; }
-  .news-item h4 { margin: 0 0 4px; font-size: 14px; display: flex; gap: 8px; align-items: baseline; }
-  .news-item h4 span { font-size: 12px; font-weight: 500; color: var(--muted); }
-  .news-item ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--muted); }
-  .news-item.cur h4::after { content: 'atual'; font-size: 10.5px; font-weight: 700; color: #fff; background: var(--primary); padding: 1px 7px; border-radius: 999px; }
+  main { padding: 24px 24px 8px; }
+  .app-foot { padding: 0 24px 8px; text-align: right; font-size: 11px; line-height: 1.4; color: var(--muted); opacity: .6; }
   .test-strip { position: fixed; top: 0; left: 0; right: 0; height: 26px; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 0 12px; background: #f76b15; color: #fff; font-size: 12.5px; font-weight: 700; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   body.is-test { padding-top: calc(var(--header-h) + 26px); }
   body.is-test .app-header { top: 26px; }
@@ -897,7 +887,7 @@
     <div class="settings-grid" id="settings"></div>
   </section>
 </main>
-<footer class="app-foot"><button type="button" class="ver-btn" id="verBtn" title="Ver novidades"></button> · Developed by Israel Braz</footer>
+<footer class="app-foot"><span id="verTxt"></span> · Developed by Israel Braz</footer>
 
 <!-- Modal do projeto -->
 <div id="modal" class="backdrop" hidden>
@@ -978,16 +968,6 @@
       <button type="submit" class="btn btn-primary">Salvar</button>
     </div>
   </form>
-</div>
-
-<!-- Novidades -->
-<div id="news" class="backdrop" hidden>
-  <div class="modal news-box" role="dialog" aria-labelledby="newsTitle">
-    <div class="modal-head"><h2 id="newsTitle">Novidades</h2>
-      <button type="button" class="icon-btn" id="newsClose" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-    </div>
-    <div class="news-body" id="newsBody"></div>
-  </div>
 </div>
 
 <!-- Minha conta -->
@@ -4097,44 +4077,9 @@
     else { $('#accErr').textContent = 'Não consegui salvar agora. Tente de novo.'; $('#accErr').style.display = 'block'; }
   });
 
-  /* ---------- Versão e novidades ---------- */
+  /* ---------- Versão ---------- */
   var APP_VERSION = '2.4.0';
-  var CHANGELOG = [
-    ['2.4.0', '28/10/2026', ['Ambiente de teste separado do gestor oficial', 'Versão e novidades no rodapé']],
-    ['2.3.2', '27/10/2026', ['Ícone da SteinCorp na aba do navegador']],
-    ['2.3.1', '27/10/2026', ['Caixas abertas ou recolhidas valem só para cada usuário']],
-    ['2.3.0', '27/10/2026', ['Histórico automático de mudanças na conversa de cada projeto']],
-    ['2.2.0', '27/10/2026', ['Conversa nos projetos, na lateral da ficha', 'Aprovar ou devolver com ajustes na conferência', 'Sininho de novidades']],
-    ['2.1.0', '27/10/2026', ['Adicionar, remover e redefinir senha de usuários (senha inicial 0303)', 'Filtro por colaborador, sempre no modo incluir']],
-    ['2.0.0', '27/10/2026', ['Gestor da empresa: usuário e senha para cada colaborador', 'Configurações só para administradores']],
-    ['1.6.4', '23/10/2026', ['Disciplinas em caixa de seleção na ficha']],
-    ['1.6.3', '23/10/2026', ['Descrição e observações crescem conforme o texto']],
-    ['1.6.2', '23/10/2026', ['Barra de andamento preenche até 100%']],
-    ['1.6.1', '22/10/2026', ['Texto abaixo do título em todos os projetos, menos concluídos']],
-    ['1.6.0', '22/10/2026', ['Cores do prazo: vermelho, amarelo e verde']],
-    ['1.5.0', '20/10/2026', ['Disciplinas, com várias por projeto', 'Nome do projeto em Número - Título', 'Observações abaixo do título']],
-    ['1.4.1', '20/10/2026', ['Correção da lista de responsáveis na ficha']],
-    ['1.4.0', '19/10/2026', ['Logo SteinCorp, abas centralizadas e filtro único']],
-    ['1.3.0', '19/10/2026', ['Edição rápida na linha: prioridade, tipo, responsáveis e prazo com calendário']],
-    ['1.2.0', '15/10/2026', ['Aba Estatísticas e datas de criação/conclusão']],
-    ['1.1.0', '15/10/2026', ['Campo de andamento (%); Concluído vai a 100%']],
-    ['1.0.0', '15/10/2026', ['Primeira versão: projetos por status, Board, filtros, dados salvos no GitHub e senha para outros aparelhos']]
-  ];
-  var newsEl = $('#news');
-  $('#verBtn').textContent = 'v' + APP_VERSION + (IS_PROD ? '' : '-teste');
-  function openNews() {
-    $('#newsBody').innerHTML = CHANGELOG.map(function (v) {
-      return '<div class="news-item' + (v[0] === APP_VERSION ? ' cur' : '') + '"><h4>v' + v[0] + ' <span>' + v[1] + '</span></h4><ul>' +
-        v[2].map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></div>';
-    }).join('');
-    newsEl.hidden = false;
-    document.body.classList.add('no-scroll');
-  }
-  function closeNews() { newsEl.hidden = true; document.body.classList.remove('no-scroll'); }
-  $('#verBtn').addEventListener('click', openNews);
-  $('#newsClose').addEventListener('click', closeNews);
-  newsEl.addEventListener('click', function (e) { if (e.target === newsEl) closeNews(); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !newsEl.hidden) closeNews(); });
+  $('#verTxt').textContent = 'v' + APP_VERSION + (IS_PROD ? '' : '-teste');
 
   purgeRefs();
   takeSnap();
