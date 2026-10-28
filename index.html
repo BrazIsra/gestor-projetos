@@ -1406,7 +1406,13 @@
   function keyUsers() { return (keyFile && keyFile.users) || {}; }
   function hasUsers() { return Object.keys(keyUsers()).length > 0; }
   function keyAdmins() { return (keyFile && Array.isArray(keyFile.admins)) ? keyFile.admins : []; }
-  function currentUser() { return gh.cfg && gh.cfg.user ? gh.cfg.user : null; }
+  /* No TESTE sem usuários cadastrados, entra como o Israel (cb-1) para dar para ver sininho, conversas etc. */
+  var TEST_USER = 'cb-1';
+  function currentUser() {
+    if (gh.cfg && gh.cfg.user) return gh.cfg.user;
+    if (!IS_PROD && gh.cfg && !hasUsers()) return TEST_USER;
+    return null;
+  }
   function isAdmin() {
     if (!keyFile) return true;
     var admins = keyAdmins();
@@ -3545,7 +3551,11 @@
   function seenKey() { return KP + 'seen.' + (currentUser() || '_'); }
   function seenMap() {
     var m = readLocal(seenKey());
-    if (!m || typeof m !== 'object') { m = { since: nowISO(), p: {} }; writeLocal(seenKey(), m); }
+    if (!m || typeof m !== 'object') {
+      /* no TESTE, mensagens dos últimos 3 dias já aparecem como novas na primeira visita */
+      m = { since: IS_PROD ? nowISO() : new Date(Date.now() - 3 * 864e5).toISOString(), p: {} };
+      writeLocal(seenKey(), m);
+    }
     m.p = m.p || {};
     return m;
   }
@@ -4299,7 +4309,7 @@
   });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.5.1';
+  var APP_VERSION = '2.5.2';
   $('#verTxt').textContent = 'v' + APP_VERSION + (IS_PROD ? '' : '-teste');
 
   purgeRefs();
