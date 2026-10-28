@@ -87,6 +87,8 @@
     max-width: 340px;
   }
   #appTitle:hover { background: var(--hover); }
+  #appTitle[contenteditable="false"] { cursor: default; }
+  #appTitle[contenteditable="false"]:hover { background: none; }
   #appTitle:focus { border-color: var(--primary); background: var(--surface); text-overflow: clip; }
 
   .tabs {
@@ -1775,6 +1777,7 @@
      Título, tema e abas
      ========================================================= */
   function setTitleFromEl() {
+    if (!isAdmin()) return;
     var t = appTitle.textContent.replace(/\s+/g, ' ').trim();
     state.title = t || DEFAULT_TITLE;
     document.title = (IS_PROD ? '' : '[TESTE] ') + state.title;
@@ -1816,6 +1819,10 @@
     var adm = isAdmin();
     var setTab = $('.tab[data-tab="settings"]');
     if (setTab) setTab.hidden = !adm;
+    /* só administradores podem renomear o gestor */
+    appTitle.setAttribute('contenteditable', adm ? 'true' : 'false');
+    appTitle.title = adm ? 'Clique para editar o título' : '';
+    if (!adm && document.activeElement === appTitle) appTitle.blur();
     if (!adm && state.tab === 'settings') state.tab = 'projects';
     renderUserBtn(); renderBell();
     $$('.tab').forEach(function (b) {
