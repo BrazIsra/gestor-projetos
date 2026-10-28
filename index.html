@@ -294,6 +294,13 @@
   @media (max-width: 900px) { .ag-view { position: static; transform: none; margin-left: 4px; } }
   @keyframes agIn { from { opacity: 0; transform: scale(.985) translateY(6px); } to { opacity: 1; transform: none; } }
   .ag-anim { animation: agIn .28s ease; transform-origin: 50% 0; }
+  /* mesma transição em outras trocas de tela */
+  .view-anim { animation: agIn .28s ease; transform-origin: 50% 0; }
+  @keyframes agSlideL { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+  @keyframes agSlideR { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+  .ag-slide-l { animation: agSlideL .22s ease; }
+  .ag-slide-r { animation: agSlideR .22s ease; }
+  @media (prefers-reduced-motion: reduce) { .ag-anim, .view-anim, .ag-slide-l, .ag-slide-r { animation: none; } }
   .ag-mgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: auto repeat(var(--weeks), minmax(118px, 1fr)); border: 1px solid var(--border); border-radius: 14px; background: var(--surface); overflow: hidden; min-height: calc(100vh - var(--header-h) - 150px); }
   .ag-mdow { text-align: center; padding: 10px 4px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--border); border-left: 1px solid var(--border); }
   .ag-mdow:first-child { border-left: 0; }
@@ -1943,6 +1950,8 @@
     applyTheme();
   });
 
+  var lastTabShown = null;
+  function replayAnim(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
   function showTab() {
     var adm = isAdmin();
     var setTab = $('.tab[data-tab="settings"]');
@@ -1958,7 +1967,12 @@
       b.classList.toggle('active', on);
       b.setAttribute('aria-selected', on ? 'true' : 'false');
     });
-    $$('.view').forEach(function (v) { v.hidden = v.id !== 'view-' + state.tab; });
+    $$('.view').forEach(function (v) {
+      var show = v.id === 'view-' + state.tab;
+      if (show && v.hidden && lastTabShown) replayAnim(v, 'view-anim');
+      v.hidden = !show;
+    });
+    lastTabShown = state.tab;
     /* o mesmo filtro aparece na Agenda */
     var slot = state.tab === 'board' ? $('#agFilterSlot') : $('#resultCount');
     if (state.tab === 'board') { if (filtersEl.parentNode !== slot) slot.appendChild(filtersEl); }
@@ -2498,7 +2512,7 @@
           '<div class="ag-list">' + items.slice(0, more > 0 ? MAXV - 1 : MAXV).map(function (p) { return agMiniHTML(p); }).join('') +
           (more > 0 ? '<button type="button" class="ag-more" data-ag-week="' + iso + '">+' + (more + 1) + ' mais</button>' : '') + '</div></div>';
       }
-      grid = '<div class="ag-mgrid' + (agAnim ? ' ag-anim' : '') + '" style="--weeks:' + weeks + '">' +
+      grid = '<div class="ag-mgrid' + agAnimCls() + '" style="--weeks:' + weeks + '">' +
         DOW.map(function (w) { return '<div class="ag-mdow">' + w + '</div>'; }).join('') + cells + '</div>';
     } else {
       var ws = new Date(agAnchor); ws.setDate(agAnchor.getDate() - agAnchor.getDay());
@@ -2506,7 +2520,7 @@
       for (var j = 0; j < 7; j++) { var dd = new Date(ws); dd.setDate(ws.getDate() + j); days.push(dd); }
       var end = days[6];
       range = MES[ws.getMonth()] + ' ' + ws.getDate() + ' - ' + MES[end.getMonth()] + ' ' + end.getDate() + ', ' + end.getFullYear();
-      grid = '<div class="ag-grid' + (agAnim ? ' ag-anim' : '') + '">' + days.map(function (d, i) {
+      grid = '<div class="ag-grid' + agAnimCls() + '">' + days.map(function (d, i) {
         var iso = isoDay(d), items = agItemsOn(iso);
         shown += items.length;
         return '<div class="ag-day' + (iso === todayIso ? ' today' : '') + '" data-day="' + iso + '">' +
@@ -2525,6 +2539,7 @@
       '</div>' + grid +
       (!shown ? '<div class="ag-foot">Nenhum projeto com prazo ' + (isM ? 'neste mês' : 'nesta semana') + '.</div>' : '');
   }
+  function agAnimCls() { return agAnim === 'l' ? ' ag-slide-l' : (agAnim === 'r' ? ' ag-slide-r' : (agAnim ? ' ag-anim' : '')); }
   function agMiniHTML(p) {
     return '<button type="button" class="ag-item ag-mini ' + agDueClass(p) + (isDone(p) ? ' done' : '') + '" data-open="' + esc(p.id) + '" title="' + esc(p.name) + '"><b>' + esc(p.name) + '</b></button>';
   }
@@ -2632,7 +2647,11 @@
   agendaEl.addEventListener('click', function (e) {
     if (agSuppressClick) { e.preventDefault(); return; }
     var nav = e.target.closest('[data-ag]');
-    if (nav) { agShift(Number(nav.dataset.ag)); renderBoard(); return; }
+    if (nav) {
+      var stp = Number(nav.dataset.ag);
+      agAnim = stp < 0 ? 'l' : (stp > 0 ? 'r' : true);
+      agShift(stp); renderBoard(); return;
+    }
     if (e.target.closest('[data-ag-view]')) {
       agView = agView === 'month' ? 'week' : 'month';
       writeLocal(KP + 'agView.v1', agView);
@@ -4629,7 +4648,7 @@
 
   statsEl.addEventListener('click', function (e) {
     var sc = e.target.closest('[data-scope]');
-    if (sc) { state.statsScope = sc.dataset.scope; save(); renderStats(); return; }
+    if (sc) { state.statsScope = sc.dataset.scope; save(); renderStats(); replayAnim($('#stats'), 'view-anim'); return; }
     var g = e.target.closest('[data-goto]');
     if (!g) return;
     var kind = g.dataset.goto, id = g.dataset.id;
@@ -4788,7 +4807,7 @@
   });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.9.0';
+  var APP_VERSION = '2.9.1';
   $('#verTxt').textContent = 'v' + APP_VERSION + (IS_PROD ? '' : '-teste');
 
   purgeRefs();
