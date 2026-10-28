@@ -113,6 +113,9 @@
   .bell-head button { border: 0; background: none; color: var(--primary); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
   .bell-item { display: block; width: 100%; text-align: left; padding: 10px 14px; border: 0; border-bottom: 1px solid var(--border); background: transparent; color: inherit; font: inherit; cursor: pointer; }
   .bell-item:hover { background: var(--hover); }
+  .bell-item.unread { background: var(--primary-soft); position: relative; padding-left: 26px; }
+  .bell-item.unread::before { content: ''; position: absolute; left: 11px; top: 15px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+  .bell-item:not(.unread) b { font-weight: 600; color: var(--muted); }
   .bell-item b { display: block; font-size: 13px; }
   .bell-item span { display: block; font-size: 12.5px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .bell-empty { padding: 18px 14px; text-align: center; color: var(--muted); font-size: 13px; }
@@ -3622,17 +3625,27 @@
     btn.hidden = !(me && ghConfigured());
     if (btn.hidden) { $('#bellPop').hidden = true; return; }
     seenMap();
-    var news = state.projects.filter(hasNews).sort(function (a, b) { return lastNotif(b).at.localeCompare(lastNotif(a).at); });
+    /* histórico: todas as notificações do usuário (as últimas 40), as não vistas em destaque */
+    var sm = seenMap(), all = [];
+    state.projects.forEach(function (p) {
+      var ref = sm.p[p.id] || sm.since;
+      (p.comments || []).forEach(function (c) {
+        if (c.by !== me && Array.isArray(c.notify) && c.notify.indexOf(me) >= 0) all.push({ p: p, m: c, unread: c.at > ref });
+      });
+    });
+    all.sort(function (a, b) { return b.m.at.localeCompare(a.m.at); });
+    all = all.slice(0, 40);
+    var unread = all.filter(function (x) { return x.unread; }).length;
+    var news = unread ? [1] : [];
     var nEl = $('#bellN');
-    nEl.hidden = !news.length; nEl.textContent = news.length;
+    nEl.hidden = !unread; nEl.textContent = unread;
     var pop = $('#bellPop');
     pop.hidden = !bellOpen;
     if (!bellOpen) return;
-    pop.innerHTML = '<div class="bell-head"><span>Novidades</span>' + (news.length ? '<button type="button" data-bell-all>Marcar tudo como visto</button>' : '') + '</div>' +
-      (news.length ? news.map(function (p) {
-        var m = lastNotif(p);
-        return '<button type="button" class="bell-item" data-bell="' + esc(p.id) + '"><b>' + esc(p.name) + '</b><span>' + esc(notifText(m)) + '</span><span>' + fmtWhen(m.at) + '</span></button>';
-      }).join('') : '<div class="bell-empty">Nada novo por aqui.</div>');
+    pop.innerHTML = '<div class="bell-head"><span>Notificações</span>' + (news.length ? '<button type="button" data-bell-all>Marcar tudo como visto</button>' : '') + '</div>' +
+      (all.length ? all.map(function (x) {
+        return '<button type="button" class="bell-item' + (x.unread ? ' unread' : '') + '" data-bell="' + esc(x.p.id) + '"><b>' + esc(x.p.name) + '</b><span>' + esc(notifText(x.m)) + '</span><span>' + fmtWhen(x.m.at) + '</span></button>';
+      }).join('') : '<div class="bell-empty">Nenhuma notificação ainda.</div>');
   }
   $('#bellBtn').addEventListener('click', function (e) { e.stopPropagation(); bellOpen = !bellOpen; renderBell(); });
   $('#bellPop').addEventListener('click', function (e) {
@@ -4399,7 +4412,7 @@
   });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.6.0';
+  var APP_VERSION = '2.6.1';
   $('#verTxt').textContent = 'v' + APP_VERSION + (IS_PROD ? '' : '-teste');
 
   purgeRefs();
