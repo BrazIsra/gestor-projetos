@@ -118,6 +118,44 @@
   .bell-item:not(.unread) b { font-weight: 600; color: var(--muted); }
   .bell-item b { display: block; font-size: 13px; }
   .bell-item span { display: block; font-size: 12.5px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bell-more { display: block; width: 100%; padding: 11px 14px; border: 0; background: var(--surface-2); color: var(--primary); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; border-radius: 0 0 12px 12px; }
+  .bell-more:hover { background: var(--hover); }
+  .modal.nc { max-width: 1000px; display: flex; flex-direction: column; height: min(720px, calc(100vh - 80px)); overflow: hidden; }
+  .nc-head-r { display: flex; align-items: center; gap: 8px; }
+  .nc-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 400px 1fr; }
+  .nc-left { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); background: var(--surface-2); }
+  .nc-tools { display: flex; gap: 8px; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); }
+  .nc-tools input { flex: 1; }
+  .nc-tools select { width: auto; }
+  .nc-list { flex: 1; overflow-y: auto; }
+  .nc-item { display: block; width: 100%; text-align: left; padding: 10px 14px 10px 26px; border: 0; border-bottom: 1px solid var(--border); background: var(--surface); color: inherit; font: inherit; cursor: pointer; position: relative; }
+  .nc-item:hover { background: var(--hover); }
+  .nc-item.sel { box-shadow: inset 3px 0 0 var(--primary); background: var(--primary-soft); }
+  .nc-item.unread::before { content: ''; position: absolute; left: 11px; top: 15px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+  .nc-item b { display: block; font-size: 13px; }
+  .nc-item:not(.unread) b { font-weight: 600; color: var(--muted); }
+  .nc-item .nc-sub { display: flex; justify-content: space-between; gap: 8px; margin-top: 2px; font-size: 12px; color: var(--muted); }
+  .nc-item .nc-sub span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nc-item .nc-sub span:last-child { flex: none; }
+  .nc-pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
+  .nc-pager .pg { display: flex; gap: 4px; }
+  .nc-pager .pg button { min-width: 30px; height: 30px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: inherit; font: inherit; cursor: pointer; }
+  .nc-pager .pg button.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .nc-pager .pg button:disabled { opacity: .4; cursor: default; }
+  .nc-right { padding: 22px 24px; overflow-y: auto; }
+  .nc-none { height: 100%; display: grid; place-items: center; color: var(--muted); font-weight: 600; }
+  .nc-det h3 { margin: 0 0 4px; font-size: 18px; }
+  .nc-det .nc-meta { font-size: 12.5px; color: var(--muted); margin-bottom: 16px; }
+  .nc-det .nc-kind { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-bottom: 10px; background: var(--primary-soft); color: var(--primary); }
+  .nc-det .nc-kind.ret { background: rgba(229,72,77,.12); color: var(--danger); }
+  .nc-det .nc-text { white-space: pre-wrap; word-break: break-word; font-size: 14px; line-height: 1.5; padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); margin-bottom: 16px; }
+  .nc .nc-back { display: none; }
+  @media (max-width: 760px) {
+    .nc .nc-back { display: inline-flex; }
+    .nc-body { grid-template-columns: 1fr; }
+    .nc.det-open .nc-left { display: none; }
+    .nc:not(.det-open) .nc-right { display: none; }
+  }
   .bell-empty { padding: 18px 14px; text-align: center; color: var(--muted); font-size: 13px; }
   .modal.wide { max-width: 1120px; }
   .modal-split { display: flex; align-items: flex-start; }
@@ -1088,6 +1126,24 @@
       <button type="submit" class="btn btn-primary" id="unlockBtn">Entrar</button>
     </div>
   </form>
+</div>
+
+<!-- Central de notificações -->
+<div id="notifCenter" class="backdrop" hidden>
+  <div class="modal nc" id="ncBox" role="dialog" aria-modal="true" aria-labelledby="ncTitle">
+    <div class="modal-head"><h2 id="ncTitle">Notificações</h2>
+      <div class="nc-head-r"><button type="button" class="btn sm" data-nc="all-seen" id="ncAllSeen">Marcar tudo como visto</button>
+      <button type="button" class="icon-btn" data-nc="close" aria-label="Fechar" title="Fechar">✕</button></div></div>
+    <div class="nc-body">
+      <div class="nc-left">
+        <div class="nc-tools"><input type="search" class="input" id="ncSearch" placeholder="Buscar…" autocomplete="off">
+          <select class="input" id="ncFilter"><option value="all">Todas</option><option value="unread">Não vistas</option></select></div>
+        <div class="nc-list" id="ncList"></div>
+        <div class="nc-pager" id="ncPager"></div>
+      </div>
+      <div class="nc-right" id="ncDetail"></div>
+    </div>
+  </div>
 </div>
 
 <!-- Confirmação -->
@@ -3625,17 +3681,10 @@
     btn.hidden = !(me && ghConfigured());
     if (btn.hidden) { $('#bellPop').hidden = true; return; }
     seenMap();
-    /* histórico: todas as notificações do usuário (as últimas 40), as não vistas em destaque */
-    var sm = seenMap(), all = [];
-    state.projects.forEach(function (p) {
-      var ref = sm.p[p.id] || sm.since;
-      (p.comments || []).forEach(function (c) {
-        if (c.by !== me && Array.isArray(c.notify) && c.notify.indexOf(me) >= 0) all.push({ p: p, m: c, unread: c.at > ref });
-      });
-    });
-    all.sort(function (a, b) { return b.m.at.localeCompare(a.m.at); });
-    all = all.slice(0, 40);
+    var all = myNotifs();
     var unread = all.filter(function (x) { return x.unread; }).length;
+    var total = all.length;
+    all = all.slice(0, 5);
     var news = unread ? [1] : [];
     var nEl = $('#bellN');
     nEl.hidden = !unread; nEl.textContent = unread;
@@ -3645,12 +3694,89 @@
     pop.innerHTML = '<div class="bell-head"><span>Notificações</span>' + (news.length ? '<button type="button" data-bell-all>Marcar tudo como visto</button>' : '') + '</div>' +
       (all.length ? all.map(function (x) {
         return '<button type="button" class="bell-item' + (x.unread ? ' unread' : '') + '" data-bell="' + esc(x.p.id) + '"><b>' + esc(x.p.name) + '</b><span>' + esc(notifText(x.m)) + '</span><span>' + fmtWhen(x.m.at) + '</span></button>';
-      }).join('') : '<div class="bell-empty">Nenhuma notificação ainda.</div>');
+      }).join('') : '<div class="bell-empty">Nenhuma notificação ainda.</div>') +
+      '<button type="button" class="bell-more" data-bell-center>Ver todas as notificações' + (total ? ' (' + total + ')' : '') + '</button>';
+    if (ncOpen) renderNC();
   }
+  /* Todas as notificações do usuário, da mais nova para a mais antiga */
+  function myNotifs() {
+    var me = currentUser();
+    if (!me) return [];
+    var sm = seenMap(), all = [];
+    state.projects.forEach(function (p) {
+      var ref = sm.p[p.id] || sm.since;
+      (p.comments || []).forEach(function (c) {
+        if (c.by !== me && Array.isArray(c.notify) && c.notify.indexOf(me) >= 0) all.push({ p: p, m: c, unread: c.at > ref });
+      });
+    });
+    return all.sort(function (a, b) { return b.m.at.localeCompare(a.m.at); });
+  }
+
+  /* ---------- Central de notificações (histórico completo) ---------- */
+  var ncOpen = false, nc = { page: 0, q: '', f: 'all', sel: null };
+  var NC_PER = 10;
+  function openNC() {
+    ncOpen = true; nc.page = 0; nc.sel = null; nc.q = ''; $('#ncSearch').value = '';
+    bellOpen = false; renderBell();
+    $('#notifCenter').hidden = false; renderNC();
+  }
+  function closeNC() { ncOpen = false; $('#notifCenter').hidden = true; }
+  function renderNC() {
+    var q = norm(nc.q.trim());
+    var all = myNotifs();
+    $('#ncAllSeen').hidden = !all.some(function (x) { return x.unread; });
+    var list = all.filter(function (x) {
+      if (nc.f === 'unread' && !x.unread) return false;
+      return !q || norm(x.p.name + ' ' + whoName(x.m.by) + ' ' + x.m.text).indexOf(q) >= 0;
+    });
+    var pages = Math.max(1, Math.ceil(list.length / NC_PER));
+    if (nc.page >= pages) nc.page = pages - 1;
+    var from = nc.page * NC_PER, slice = list.slice(from, from + NC_PER);
+    $('#ncList').innerHTML = slice.length ? slice.map(function (x) {
+      return '<button type="button" class="nc-item' + (x.unread ? ' unread' : '') + (nc.sel === x.m.id ? ' sel' : '') + '" data-nc-item="' + esc(x.m.id) + '">' +
+        '<b>' + esc(x.p.name) + '</b><div class="nc-sub"><span>' + esc(notifText(x.m)) + '</span><span>' + fmtWhen(x.m.at) + '</span></div></button>';
+    }).join('') : '<div class="bell-empty">' + (all.length ? 'Nada encontrado.' : 'Nenhuma notificação ainda.') + '</div>';
+    var btns = '';
+    var startP = Math.max(0, Math.min(nc.page - 2, pages - 5));
+    for (var i = startP; i < Math.min(pages, startP + 5); i++) btns += '<button type="button" data-nc-page="' + i + '" class="' + (i === nc.page ? 'on' : '') + '">' + (i + 1) + '</button>';
+    $('#ncPager').innerHTML = '<span>' + (list.length ? 'Mostrando ' + (from + 1) + ' a ' + (from + slice.length) + ' de ' + list.length : '0 notificações') + '</span>' +
+      '<div class="pg"><button type="button" data-nc-page="' + (nc.page - 1) + '"' + (nc.page ? '' : ' disabled') + '>«</button>' + btns +
+      '<button type="button" data-nc-page="' + (nc.page + 1) + '"' + (nc.page < pages - 1 ? '' : ' disabled') + '>»</button></div>';
+    var cur = nc.sel ? all.filter(function (x) { return x.m.id === nc.sel; })[0] : null;
+    $('#ncBox').classList.toggle('det-open', !!cur);
+    $('#ncDetail').innerHTML = cur ?
+      '<div class="nc-det"><span class="nc-kind' + (cur.m.kind === 'sys' ? ' ret' : '') + '">' + (cur.m.kind === 'sys' ? 'Devolvido com ajustes' : 'Menção') + '</span>' +
+      '<h3>' + esc(cur.p.name) + '</h3><div class="nc-meta">' + esc(whoName(cur.m.by)) + ' · ' + fmtWhen(cur.m.at) + '</div>' +
+      '<div class="nc-text">' + msgTextHTML(cur.m.text) + '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-primary" data-nc-open="' + esc(cur.p.id) + '">Abrir projeto</button>' +
+      '<button type="button" class="btn nc-back" data-nc="back">Voltar à lista</button></div></div>' :
+      '<div class="nc-none">Nenhuma notificação selecionada.</div>';
+  }
+  $('#notifCenter').addEventListener('click', function (e) {
+    if (e.target.id === 'notifCenter') { closeNC(); return; }
+    var b;
+    if ((b = e.target.closest('[data-nc-item]'))) {
+      nc.sel = b.dataset.ncItem;
+      var x = myNotifs().filter(function (y) { return y.m.id === nc.sel; })[0];
+      if (x && x.unread) { markSeen(x.p.id); refreshData(); }
+      renderBell(); renderNC(); return;
+    }
+    if ((b = e.target.closest('[data-nc-page]')) && !b.disabled) { nc.page = Number(b.dataset.ncPage); renderNC(); return; }
+    if ((b = e.target.closest('[data-nc-open]'))) { closeNC(); openProject(b.dataset.ncOpen); return; }
+    if ((b = e.target.closest('[data-nc]'))) {
+      if (b.dataset.nc === 'close') closeNC();
+      else if (b.dataset.nc === 'back') { nc.sel = null; renderNC(); }
+      else if (b.dataset.nc === 'all-seen') { state.projects.filter(hasNews).forEach(function (p) { markSeen(p.id); }); refreshData(); renderNC(); }
+    }
+  });
+  $('#ncSearch').addEventListener('input', function () { nc.q = this.value; nc.page = 0; renderNC(); });
+  $('#ncFilter').addEventListener('change', function () { nc.f = this.value; nc.page = 0; renderNC(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && ncOpen) closeNC(); });
   $('#bellBtn').addEventListener('click', function (e) { e.stopPropagation(); bellOpen = !bellOpen; renderBell(); });
   $('#bellPop').addEventListener('click', function (e) {
     var all = e.target.closest('[data-bell-all]');
     if (all) { state.projects.filter(hasNews).forEach(function (p) { markSeen(p.id); }); bellOpen = false; renderBell(); refreshData(); return; }
+    if (e.target.closest('[data-bell-center]')) { openNC(); return; }
     var it = e.target.closest('[data-bell]');
     if (it) { bellOpen = false; renderBell(); openProject(it.dataset.bell); }
   });
@@ -4412,7 +4538,7 @@
   });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.6.1';
+  var APP_VERSION = '2.7.0';
   $('#verTxt').textContent = 'v' + APP_VERSION + (IS_PROD ? '' : '-teste');
 
   purgeRefs();
