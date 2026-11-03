@@ -415,6 +415,11 @@
   .cl-h span { font-size: 12px; color: var(--muted); }
   .cl-h .cl-now { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); }
   .cl-ver ul { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.55; }
+  .test-strip .pull-prod { margin-left: 12px; flex: none; border: 1px solid rgba(255,255,255,.7); border-radius: 999px; background: rgba(255,255,255,.15); color: #fff; font: inherit; font-size: 11.5px; padding: 1px 10px; cursor: pointer; }
+  .test-strip .pull-prod:hover { background: rgba(255,255,255,.3); }
+  .test-strip .pull-prod:disabled { opacity: .6; cursor: default; }
+  .test-strip > span { overflow: hidden; text-overflow: ellipsis; }
+  @media (max-width: 700px) { .test-strip > span { display: none; } .test-strip .pull-prod { margin-left: 0; } }
   .test-strip { position: fixed; top: 0; left: 0; right: 0; height: 26px; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 0 12px; background: #f76b15; color: #fff; font-size: 12.5px; font-weight: 700; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   body.is-test { padding-top: calc(var(--header-h) + 26px); }
   body.is-test .app-header { top: 26px; }
@@ -1478,7 +1483,8 @@
     document.body.classList.add('is-test');
     var strip = document.createElement('div');
     strip.className = 'test-strip';
-    strip.textContent = 'AMBIENTE DE TESTE · as mudanças aqui não afetam o gestor oficial da SteinCorp';
+    strip.innerHTML = '<span>AMBIENTE DE TESTE · as mudanças aqui não afetam o gestor oficial da SteinCorp</span>' +
+      '<button type="button" class="pull-prod" id="pullProd" title="Troca os dados do teste por uma cópia dos dados do gestor oficial">⟳ Puxar dados do oficial</button>';
     document.body.insertBefore(strip, document.body.firstChild);
     document.title = '[TESTE] ' + document.title;
   }
@@ -1686,6 +1692,43 @@
     return 'https://api.github.com/repos/' + encodeURIComponent(gh.cfg.owner) + '/' + encodeURIComponent(gh.cfg.repo);
   }
   function fileUrl() { return repoUrl() + '/contents/' + DATA_FILE; }
+
+  /* Só no TESTE: troca os dados do teste por uma cópia dos dados do oficial */
+  var PROD_DATA_REPO = 'steincorp-dados';
+  async function pullFromProd() {
+    if (IS_PROD) return;
+    if (!ghConfigured()) { toast('Entre no gestor de teste primeiro.'); return; }
+    var ok = await confirmBox('Puxar dados do oficial?', 'Os projetos, configurações e histórico do TESTE serão trocados por uma cópia do gestor oficial. O oficial não é alterado.', 'Puxar dados');
+    if (!ok) return;
+    var btn = $('#pullProd'); if (btn) { btn.disabled = true; btn.textContent = 'Copiando…'; }
+    try {
+      clearTimeout(gh.timer); gh.timer = null;
+      var src = await ghFetch('https://api.github.com/repos/' + encodeURIComponent(gh.cfg.owner) + '/' + PROD_DATA_REPO + '/contents/' + DATA_FILE);
+      if (src.status !== 200) {
+        toast(src.status === 404 || src.status === 403
+          ? 'A chave do teste não tem acesso ao repositório ' + PROD_DATA_REPO + '. Libere esse repositório na chave do GitHub.'
+          : 'Não consegui ler os dados do oficial (' + src.status + ').');
+        return;
+      }
+      var sj = await src.json();
+      var content = String(sj.content || '').replace(/\s+/g, '');
+      JSON.parse(fromBase64(content));
+      var cur = await ghFetch(fileUrl());
+      var body = { message: 'Teste: copia dados do oficial (' + new Date().toLocaleString('pt-BR') + ')', content: content };
+      if (cur.status === 200) body.sha = (await cur.json()).sha;
+      var put = await ghFetch(fileUrl(), 'PUT', body);
+      if (put.status !== 200 && put.status !== 201) { toast('Não consegui gravar no teste (' + put.status + '). Tente de novo.'); return; }
+      gh.conflict = false; gh.lastJSON = null;
+      await ghConnect(true);
+      renderSettings();
+      toast('Dados do oficial copiados para o teste.');
+    } catch (e) {
+      toast('Não foi possível copiar agora. Confira a internet e tente de novo.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '⟳ Puxar dados do oficial'; }
+    }
+  }
+  if (!IS_PROD) document.addEventListener('click', function (e) { if (e.target.closest('#pullProd')) pullFromProd(); });
 
   function errorText(status) {
     if (status === 401) return 'A chave de acesso é inválida ou venceu. Gere uma nova no GitHub e cole aqui.';
@@ -4939,9 +4982,10 @@
   });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.13.2';
+  var APP_VERSION = '2.13.3';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.13.3', d: '03/11/2026', items: ['Só no teste: botão "Puxar dados do oficial" na faixa laranja.'] },
     { v: '2.13.2', d: '03/11/2026', items: ['Classificar pelas colunas (Projeto, Prioridade, Prazo…) agora vale só para quem clicou, sem mudar a tela dos outros.'] },
     { v: '2.13.1', d: '28/10/2026', items: ['Filtro de colaborador segue as colunas: nos projetos em conferência conta só o conferente; nas outras caixas, os responsáveis.'] },
     { v: '2.13.0', d: '28/10/2026', items: ['Na caixa Conferência, a coluna Responsável virou Conferente: mostra quem confere e permite trocar com um clique.', 'No filtro de colaborador, quem é conferente também vê os projetos que estão em conferência com ele.'] },
