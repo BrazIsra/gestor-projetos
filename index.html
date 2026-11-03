@@ -4975,6 +4975,8 @@
     $('#accountTitle').textContent = me ? ($('#userName').textContent || 'Minha conta') : 'Senha da empresa';
     $('#accountInfo').textContent = accountForced
       ? 'Bem-vindo! Este é seu primeiro acesso (ou sua senha foi redefinida). Escolha agora a sua senha.'
+      : me && !canPass
+      ? 'Ambiente de teste: você entra automaticamente como ' + whoName(me) + '. Para trocar sua senha, use o gestor oficial.'
       : me
       ? 'Você está conectado com o seu usuário' + (isAdmin() ? ' (administrador)' : '') + '. Aqui você pode trocar sua senha ou sair deste aparelho.'
       : 'Este aparelho entrou com a senha única da empresa. Saia e entre com seu usuário quando ele estiver criado.';
@@ -5011,9 +5013,10 @@
   });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.14.2';
+  var APP_VERSION = '2.14.3';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.14.3', d: '03/11/2026', items: ['Minha conta no teste explica que a troca de senha é feita no gestor oficial.'] },
     { v: '2.14.2', d: '03/11/2026', items: ['Corrigido: clicar no seu nome abria a tela de "primeiro acesso" sem como fechar. Agora abre Minha conta, com Fechar, Sair e troca de senha opcional (fecha também com Esc ou clicando fora).'] },
     { v: '2.14.1', d: '03/11/2026', items: ['Cores sugeridas no seletor de cor trocadas por cores vivas.'] },
     { v: '2.14.0', d: '03/11/2026', items: ['Nova disciplina já vem com uma cor bem viva e aleatória, diferente das que já existem.'] },
