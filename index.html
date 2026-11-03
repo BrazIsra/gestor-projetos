@@ -1464,8 +1464,8 @@
   }
 
   /* Dados que vão para o GitHub (iguais em todo aparelho) e preferências deste aparelho */
-  var SHARED_KEYS = ['version', 'title', 'priorities', 'statuses', 'types', 'collaborators', 'projects', 'sort', 'audit'];
-  var LOCAL_KEYS = ['theme', 'tab', 'filters', 'statsScope', 'collapsed'];
+  var SHARED_KEYS = ['version', 'title', 'priorities', 'statuses', 'types', 'collaborators', 'projects', 'audit'];
+  var LOCAL_KEYS = ['theme', 'tab', 'filters', 'statsScope', 'collapsed', 'sort']; /* a classificação das colunas é de cada usuário */
   /* O mesmo arquivo roda no site oficial e no de teste: cada um usa nomes e dados próprios */
   var SITE_DIR = (location.pathname.split('/').filter(Boolean)[0] || '').toLowerCase();
   var IS_PROD = SITE_DIR === 'steincorp-projetos';
@@ -4939,9 +4939,10 @@
   });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.13.1';
+  var APP_VERSION = '2.13.2';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.13.2', d: '03/11/2026', items: ['Classificar pelas colunas (Projeto, Prioridade, Prazo…) agora vale só para quem clicou, sem mudar a tela dos outros.'] },
     { v: '2.13.1', d: '28/10/2026', items: ['Filtro de colaborador segue as colunas: nos projetos em conferência conta só o conferente; nas outras caixas, os responsáveis.'] },
     { v: '2.13.0', d: '28/10/2026', items: ['Na caixa Conferência, a coluna Responsável virou Conferente: mostra quem confere e permite trocar com um clique.', 'No filtro de colaborador, quem é conferente também vê os projetos que estão em conferência com ele.'] },
     { v: '2.12.0', d: '28/10/2026', items: ['Administrador pode apagar mensagens e linhas do histórico do projeto (ícone de lixeira ao passar o mouse).', 'Cada exclusão fica registrada no Histórico de atividades.'] },
