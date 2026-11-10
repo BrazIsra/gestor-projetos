@@ -89,14 +89,14 @@
   #appTitle:hover { background: var(--hover); }
   #appTitle[contenteditable="false"] { cursor: default; }
   #appTitle[contenteditable="false"]:hover { background: none; }
-  /* Tema escuro: vidro com leve tom do azul principal */
+  /* Tema escuro: vidro transparente sem cor, com brilho fino no alto */
   :root[data-theme="dark"] .tab-glass {
-    background: linear-gradient(180deg, rgba(70,131,234,.22), rgba(70,131,234,.09));
-    border-color: rgba(110,160,240,.22);
-    box-shadow: 0 4px 14px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.12);
+    background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.05));
+    border-color: rgba(255,255,255,.10);
+    box-shadow: 0 4px 14px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.16);
   }
   :root[data-theme="dark"] .tab-glass::after { opacity: 0; }
-  :root[data-theme="dark"] .tabs.glass-on .tab.active { color: #d0defa; }
+  :root[data-theme="dark"] .tabs.glass-on .tab.active { color: #fff; }
   #appTitle:focus { border-color: var(--primary); background: var(--surface); text-overflow: clip; }
 
   .tabs {
@@ -5275,9 +5275,10 @@
   document.addEventListener('animationend', function (e) { if (e.target.classList && e.target.classList.contains('tab-glass')) e.target.classList.remove('moving'); });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.18.0';
+  var APP_VERSION = '2.18.1';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.18.1', d: '10/11/2026', items: ['Tema escuro: o vidro da aba ativa ficou transparente, sem cor.'] },
     { v: '2.18.0', d: '10/11/2026', items: ['Cor principal do gestor trocada de roxo para azul (botões, aba ativa, links e barras de andamento), nos temas claro e escuro.', 'No tema escuro, o vidro da aba ativa ganhou um leve tom de azul.'] },
     { v: '2.17.2', d: '10/11/2026', items: ['Tema escuro: o vidro da aba ativa virou um cinza grafite fosco, neutro e discreto.'] },
     { v: '2.17.1', d: '10/11/2026', items: ['Tema escuro: o vidro da aba ativa ficou roxo translúcido, mais discreto.'] },
