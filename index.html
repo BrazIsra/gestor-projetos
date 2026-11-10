@@ -1235,10 +1235,6 @@
         <div id="f-type" class="multi"></div>
       </div>
       <div class="field">
-        <label for="f-client">Cliente</label>
-        <input id="f-client" autocomplete="off">
-      </div>
-      <div class="field">
         <label for="f-status">Status</label>
         <select id="f-status"></select>
       </div>
@@ -1250,8 +1246,8 @@
         <label for="f-deadline">Prazo</label>
         <input id="f-deadline" type="date">
       </div>
-      <div class="field">
-        <label for="f-location">Local / Obra</label>
+      <div class="field full" style="display:none"><!-- Cliente e Local / Obra saíram: o texto foi para a descrição -->
+        <input id="f-client" autocomplete="off">
         <input id="f-location" autocomplete="off">
       </div>
       <div class="field full">
@@ -1519,6 +1515,13 @@
     if (!notes) return desc;
     return desc ? desc + '\n' + notes : notes;
   }
+  /* Os campos Cliente e Local / Obra saíram: o que estava neles vai para o fim da descrição (nada é apagado) */
+  function mergeClientLocation(desc, client, location) {
+    client = String(client || '').trim(); location = String(location || '').trim();
+    if (client) desc = mergeNotes(desc, 'Cliente: ' + client);
+    if (location) desc = mergeNotes(desc, 'Local / Obra: ' + location);
+    return desc;
+  }
   function normalize(d) {
     var def = defaults();
     if (!d || typeof d !== 'object') return def;
@@ -1538,9 +1541,9 @@
     });
     out.projects = out.projects.filter(function (p) { return p && p.id; }).map(function (p) {
       return {
-        id: String(p.id), name: fmtName(String(p.name || 'Sem nome')), desc: mergeNotes(p.desc, p.notes),
-        typeIds: Array.isArray(p.typeIds) ? p.typeIds.filter(Boolean) : (p.typeId ? [p.typeId] : []), client: String(p.client || ''), statusId: p.statusId || '',
-        priorityId: p.priorityId || '', deadline: String(p.deadline || ''), location: String(p.location || ''),
+        id: String(p.id), name: fmtName(String(p.name || 'Sem nome')), desc: mergeClientLocation(mergeNotes(p.desc, p.notes), p.client, p.location),
+        typeIds: Array.isArray(p.typeIds) ? p.typeIds.filter(Boolean) : (p.typeId ? [p.typeId] : []), client: '', statusId: p.statusId || '',
+        priorityId: p.priorityId || '', deadline: String(p.deadline || ''), location: '',
         responsibles: Array.isArray(p.responsibles) ? p.responsibles.slice() : [],
         checker: typeof p.checker === 'string' ? p.checker : '',
         notes: '',
@@ -5324,9 +5327,10 @@
   document.addEventListener('animationend', function (e) { if (e.target.classList && e.target.classList.contains('tab-glass')) e.target.classList.remove('moving'); });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.19.7';
+  var APP_VERSION = '2.20.0';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.20.0', d: '10/11/2026', items: ['Ficha do projeto: saíram os campos Cliente e Local / Obra, e a ficha ficou uma linha menor.', 'O que estava escrito neles foi para o fim da descrição (ex.: "Cliente: ENG. FABRICIO SENS"), sem apagar o que já havia na descrição.'] },
     { v: '2.19.7', d: '10/11/2026', items: ['A aba Meus projetos passou a se chamar Pessoal.'] },
     { v: '2.19.6', d: '10/11/2026', items: ['Projetos com 4 responsáveis mostram as 4 bolinhas (o "+1" só aparece a partir de 5 pessoas).'] },
     { v: '2.19.5', d: '10/11/2026', items: ['Celular: a barra de abas rola para o lado, para a aba Configurações não ficar cortada.', 'Meus projetos: "em andamento" conta só Em andamento e Em revisão; nova caixinha "vence hoje", separada de "atrasados"; "para conferir" em azul.', 'Recado em Meus projetos avisa só quem for mencionado com @.', 'Na conversa do projeto, o botão "Devolver com ajustes" de cima some quando o formulário de ajustes está aberto.'] },
