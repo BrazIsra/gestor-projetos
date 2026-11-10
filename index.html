@@ -1145,7 +1145,7 @@
   <nav class="tabs" role="tablist">
     <span class="tab-glass" aria-hidden="true"></span>
     <button class="tab" role="tab" data-tab="projects">Quadro</button>
-    <button class="tab" role="tab" data-tab="mine">Meus projetos</button>
+    <button class="tab" role="tab" data-tab="mine">Pessoal</button>
     <button class="tab" role="tab" data-tab="board">Agenda</button>
     <button class="tab" role="tab" data-tab="stats">Estatísticas</button>
     <button class="tab" role="tab" data-tab="settings">Configurações</button>
@@ -5324,9 +5324,10 @@
   document.addEventListener('animationend', function (e) { if (e.target.classList && e.target.classList.contains('tab-glass')) e.target.classList.remove('moving'); });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.19.6';
+  var APP_VERSION = '2.19.7';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.19.7', d: '10/11/2026', items: ['A aba Meus projetos passou a se chamar Pessoal.'] },
     { v: '2.19.6', d: '10/11/2026', items: ['Projetos com 4 responsáveis mostram as 4 bolinhas (o "+1" só aparece a partir de 5 pessoas).'] },
     { v: '2.19.5', d: '10/11/2026', items: ['Celular: a barra de abas rola para o lado, para a aba Configurações não ficar cortada.', 'Meus projetos: "em andamento" conta só Em andamento e Em revisão; nova caixinha "vence hoje", separada de "atrasados"; "para conferir" em azul.', 'Recado em Meus projetos avisa só quem for mencionado com @.', 'Na conversa do projeto, o botão "Devolver com ajustes" de cima some quando o formulário de ajustes está aberto.'] },
     { v: '2.19.4', d: '10/11/2026', items: ['Corrigido: no tema escuro, os nomes da lista "Ver de" em Meus projetos ficavam invisíveis.'] },
