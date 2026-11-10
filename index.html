@@ -2110,12 +2110,16 @@
   }
   $$('.tab').forEach(function (b) {
     b.addEventListener('click', function () {
+      /* ao entrar na Agenda vindo de outra aba, volta para hoje (semana ou mês atual) */
+      var toAgenda = b.dataset.tab === 'board' && state.tab !== 'board';
+      if (toAgenda) agShift(0);
       state.tab = b.dataset.tab;
       ui.openFilter = null;
       closePop();
       save();
       showTab();
       renderFilters();
+      if (toAgenda) renderBoard();
       window.scrollTo(0, 0);
     });
   });
@@ -2815,6 +2819,8 @@
       agShift(stp); renderBoard(); return;
     }
     if (e.target.closest('[data-ag-view]')) {
+      /* de Mês para Semana: se o mês mostrado é o atual, abre na semana de hoje (e não na 1ª do mês) */
+      if (agView === 'month' && agIsCurrent()) agShift(0);
       agView = agView === 'month' ? 'week' : 'month';
       writeLocal(KP + 'agView.v1', agView);
       agAnim = true; renderBoard(); return;
@@ -5038,9 +5044,10 @@
   });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.16.0';
+  var APP_VERSION = '2.16.1';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.16.1', d: '10/11/2026', items: ['Agenda sempre abre na semana de hoje: ao entrar na aba e ao trocar de Mês para Semana no mês atual (antes abria na 1ª semana do mês).'] },
     { v: '2.16.0', d: '10/11/2026', items: ['O gestor se atualiza sozinho quando sai uma versão nova: confere de 5 em 5 minutos e recarrega só quando é seguro (nenhuma janela aberta, nada sendo digitado e tudo salvo).'] },
     { v: '2.15.1', d: '10/11/2026', items: ['Na ficha do projeto, a lista de Responsáveis agora abre para cima, sem precisar rolar a tela.'] },
     { v: '2.15.0', d: '03/11/2026', items: ['Botão "Enviar para conferência" dentro do projeto: salva a ficha e move para a conferência sem precisar arrastar. O conferente é avisado no sininho.'] },
