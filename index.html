@@ -15,9 +15,9 @@
     --text: #1f2430;
     --muted: #6b7280;
     --hover: #f1f2f6;
-    --primary: #6c5ce7;
-    --primary-hover: #5b4bd6;
-    --primary-soft: #efedfd;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-soft: #e8f0fe;
     --danger: #e5484d;
     --danger-soft: #fdecec;
     --warn: #d97706;
@@ -34,9 +34,9 @@
     --text: #e7e9ee;
     --muted: #9aa1b0;
     --hover: #262a36;
-    --primary: #8b7cf6;
-    --primary-hover: #9d90f8;
-    --primary-soft: #2a2550;
+    --primary: #4683ea;
+    --primary-hover: #5a92ee;
+    --primary-soft: #152b52;
     --danger: #f2555a;
     --danger-soft: #3a1f23;
     --warn: #f0a640;
@@ -89,13 +89,14 @@
   #appTitle:hover { background: var(--hover); }
   #appTitle[contenteditable="false"] { cursor: default; }
   #appTitle[contenteditable="false"]:hover { background: none; }
-  /* Tema escuro: vidro grafite fosco (cinza neutro), com brilho fino no alto e sombra para baixo */
+  /* Tema escuro: vidro com leve tom do azul principal */
   :root[data-theme="dark"] .tab-glass {
-    background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.045));
-    border-color: rgba(255,255,255,.05);
-    box-shadow: 0 2px 10px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
+    background: linear-gradient(180deg, rgba(70,131,234,.22), rgba(70,131,234,.09));
+    border-color: rgba(110,160,240,.22);
+    box-shadow: 0 4px 14px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.12);
   }
   :root[data-theme="dark"] .tab-glass::after { opacity: 0; }
+  :root[data-theme="dark"] .tabs.glass-on .tab.active { color: #d0defa; }
   #appTitle:focus { border-color: var(--primary); background: var(--surface); text-overflow: clip; }
 
   .tabs {
@@ -117,7 +118,7 @@
     border-radius: 8px; pointer-events: none; opacity: 0;
     background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.55));
     border: 1px solid rgba(255,255,255,.9);
-    box-shadow: 0 6px 18px rgba(30,40,80,.14), 0 1px 2px rgba(30,40,80,.10), inset 0 1px 0 rgba(255,255,255,1), inset 0 -1px 2px rgba(108,92,231,.10);
+    box-shadow: 0 6px 18px rgba(20,40,90,.14), 0 1px 2px rgba(20,40,90,.10), inset 0 1px 0 rgba(255,255,255,1), inset 0 -1px 2px rgba(37,99,235,.10);
     -webkit-backdrop-filter: blur(10px) saturate(180%); backdrop-filter: blur(10px) saturate(180%);
     transition: transform .5s cubic-bezier(.3,1.12,.4,1), width .5s cubic-bezier(.3,1.12,.4,1), opacity .2s ease;
     will-change: transform, width;
@@ -1085,7 +1086,7 @@
   .mine-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
   .mc { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--mc, var(--border)); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
   .mc.flash { animation: mcFlash .8s ease; }
-  @keyframes mcFlash { 0% { box-shadow: 0 0 0 3px rgba(108,92,231,.35); } 100% { box-shadow: 0 0 0 0 rgba(108,92,231,0); } }
+  @keyframes mcFlash { 0% { box-shadow: 0 0 0 3px rgba(37,99,235,.35); } 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); } }
   .mc-top { display: flex; align-items: flex-start; gap: 8px; }
   .mc-name { font-weight: 700; font-size: 15px; line-height: 1.3; flex: 1; cursor: pointer; }
   .mc-name:hover { color: var(--primary); }
@@ -5274,9 +5275,10 @@
   document.addEventListener('animationend', function (e) { if (e.target.classList && e.target.classList.contains('tab-glass')) e.target.classList.remove('moving'); });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.17.2';
+  var APP_VERSION = '2.18.0';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.18.0', d: '10/11/2026', items: ['Cor principal do gestor trocada de roxo para azul (botões, aba ativa, links e barras de andamento), nos temas claro e escuro.', 'No tema escuro, o vidro da aba ativa ganhou um leve tom de azul.'] },
     { v: '2.17.2', d: '10/11/2026', items: ['Tema escuro: o vidro da aba ativa virou um cinza grafite fosco, neutro e discreto.'] },
     { v: '2.17.1', d: '10/11/2026', items: ['Tema escuro: o vidro da aba ativa ficou roxo translúcido, mais discreto.'] },
     { v: '2.17.0', d: '10/11/2026', items: ['Nova aba Meus projetos: seus projetos em cartões, com botões rápidos para andamento (+10% / −10%), prazo (+1 dia, +1 semana ou escolher data), enviar para conferência e recado, sem abrir a ficha.', 'Na mesma aba, os projetos para você conferir, com Aprovar e Devolver com ajustes.', 'A aba Projetos passou a se chamar Quadro.', 'Transição suave estilo vidro ao trocar de aba.'] },
