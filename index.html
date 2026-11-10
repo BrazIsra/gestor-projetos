@@ -1026,8 +1026,10 @@
     .app-header { display: flex; flex-wrap: wrap; align-content: center; gap: 10px; padding: 10px 14px; }
     .brand { flex: 1; }
     #appTitle { max-width: none; font-size: 16px; }
-    .tabs { order: 3; width: 100%; }
-    .tab { flex: 1; padding: 7px 6px; }
+    /* celular: as 5 abas não cabem; a barra rola para o lado (no PC nada muda) */
+    .tabs { order: 3; width: 100%; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab { flex: 1 0 auto; padding: 7px 10px; }
     .btn-new .lbl { display: none; }
     .sync #syncText { display: none; }
     .sync { padding: 8px; }
@@ -1082,7 +1084,8 @@
   .mk b { font-size: 16px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
   .mk span { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
   .mk.bad { border-color: var(--danger); } .mk.bad b { color: var(--danger); }
-  .mk.chk { border-color: var(--warn); } .mk.chk b { color: var(--warn); }
+  .mk.today { border-color: var(--warn); } .mk.today b { color: var(--warn); }
+  .mk.chk { border-color: var(--primary); } .mk.chk b { color: var(--primary); }
   .mk.zero b { color: var(--muted); }
   .mine-head .who { margin-left: auto; font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
   /* fundo e cor explícitos: com fundo transparente, a lista aberta ficava branca com letra clara no tema escuro */
@@ -4364,7 +4367,7 @@
     if (isConfStatus(p.statusId)) {
       html += '<div class="talk-actions"><span class="t">Este projeto está em conferência.</span>' +
         '<button type="button" class="btn btn-ok sm" data-talk="approve">Aprovar</button>' +
-        '<button type="button" class="btn btn-danger sm" data-talk="ret-open">Devolver com ajustes</button></div>';
+        (talkUi.ret ? '' : '<button type="button" class="btn btn-danger sm" data-talk="ret-open">Devolver com ajustes</button>') + '</div>'; /* some quando o formulário de ajustes abre */
       if (talkUi.ret) {
         var opts = state.statuses.filter(function (x) { return !isConfStatus(x.id) && !isDoneStatus(x.id); });
         var def = opts.filter(function (x) { return norm(x.name).indexOf('andamento') >= 0; })[0] || opts[0];
@@ -5157,7 +5160,7 @@
     var d = daysUntil(p.deadline);
     if (d === null) return '<span class="mr-due">Sem prazo</span>';
     if (d < 0) return '<span class="mr-due late">Atrasado ' + (-d) + (d === -1 ? ' dia' : ' dias') + '</span>';
-    if (d === 0) return '<span class="mr-due late">Vence hoje</span>';
+    if (d === 0) return '<span class="mr-due soon">Vence hoje</span>';
     if (d === 1) return '<span class="mr-due soon">Amanhã</span>';
     if (d <= 3) return '<span class="mr-due soon">Em ' + d + ' dias</span>';
     return '<span class="mr-due">' + fmtDate(p.deadline).slice(0, 5) + '</span>';
@@ -5210,10 +5213,14 @@
     var waiting = open.filter(function (p) { return isConfStatus(p.statusId) && p.checker !== me && p.responsibles.indexOf(me) >= 0; });
     var byDue = function (a, b) { var x = a.deadline || '9999', y = b.deadline || '9999'; return x < y ? -1 : (x > y ? 1 : 0); };
     mine.sort(byDue); toCheck.sort(byDue); waiting.sort(byDue);
-    var late = mine.filter(function (p) { var d = daysUntil(p.deadline); return d !== null && d <= 0; }).length;
+    /* em andamento = só os status Em andamento e Em revisão; atrasado e vence hoje separados */
+    var going = mine.filter(function (p) { var n = norm(nameIn(state.statuses, p.statusId, '')); return n.indexOf('andamento') >= 0 || n.indexOf('revis') >= 0; }).length;
+    var late = mine.filter(function (p) { var d = daysUntil(p.deadline); return d !== null && d < 0; }).length;
+    var today = mine.filter(function (p) { return daysUntil(p.deadline) === 0; }).length;
     /* caixinhas no estilo das Estatísticas */
     var box = function (n, label, cls) { return '<div class="mk' + (cls ? ' ' + cls : '') + '"><b>' + n + '</b><span>' + label + '</span></div>'; };
-    var sum = box(mine.length, 'em andamento', '') + box(late, late === 1 ? 'atrasado' : 'atrasados', late ? 'bad' : 'zero') +
+    var sum = box(going, 'em andamento', '') + box(late, late === 1 ? 'atrasado' : 'atrasados', late ? 'bad' : 'zero') +
+      box(today, 'vence hoje', today ? 'today' : 'zero') +
       box(toCheck.length, 'para conferir', toCheck.length ? 'chk' : 'zero');
     var html = '<div class="mine-head"><h2>Olá, ' + esc(whoName(me).split(' ')[0]) + '</h2><div class="mks">' + sum + '</div>' +
       '<label class="who">Ver de <select id="mineWho">' + state.collaborators.map(function (c) {
@@ -5283,7 +5290,7 @@
       } else if (a === 'note-send') {
         var t = ($('[data-mq-text]', row).value || '').trim();
         if (!t) { toast('Escreva o recado.'); return; }
-        addComment(p, t, '', mentionsIn(t).concat(p.responsibles, p.checker ? [p.checker] : []));
+        addComment(p, t, '', mentionsIn(t)); /* só quem foi mencionado com @ é avisado, igual à ficha */
         mineDone(p, 'Recado enviado.');
       }
     });
@@ -5301,6 +5308,12 @@
       g.classList.remove('moving'); void g.offsetWidth; g.classList.add('moving');
     }
     g.style.transform = 'translateX(' + x + 'px)';
+    /* no celular a barra rola: traz a aba escolhida para a parte visível */
+    if (nav.scrollWidth > nav.clientWidth) {
+      var l = x - 8, r = x + w + 8;
+      if (l < nav.scrollLeft) nav.scrollTo({ left: l, behavior: glassFirst ? 'auto' : 'smooth' });
+      else if (r > nav.scrollLeft + nav.clientWidth) nav.scrollTo({ left: r - nav.clientWidth, behavior: glassFirst ? 'auto' : 'smooth' });
+    }
     g.style.width = w + 'px';
     g.style.opacity = '1';
     nav.classList.add('glass-on');
@@ -5311,9 +5324,10 @@
   document.addEventListener('animationend', function (e) { if (e.target.classList && e.target.classList.contains('tab-glass')) e.target.classList.remove('moving'); });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.19.4';
+  var APP_VERSION = '2.19.5';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.19.5', d: '10/11/2026', items: ['Celular: a barra de abas rola para o lado, para a aba Configurações não ficar cortada.', 'Meus projetos: "em andamento" conta só Em andamento e Em revisão; nova caixinha "vence hoje", separada de "atrasados"; "para conferir" em azul.', 'Recado em Meus projetos avisa só quem for mencionado com @.', 'Na conversa do projeto, o botão "Devolver com ajustes" de cima some quando o formulário de ajustes está aberto.'] },
     { v: '2.19.4', d: '10/11/2026', items: ['Corrigido: no tema escuro, os nomes da lista "Ver de" em Meus projetos ficavam invisíveis.'] },
     { v: '2.19.3', d: '10/11/2026', items: ['Tema escuro: a aba ativa ficou no mesmo estilo do seletor "Só abertos / Todos" das Estatísticas, mantendo a transição ao trocar de aba.'] },
     { v: '2.19.2', d: '10/11/2026', items: ['Meus projetos com a mesma largura do Quadro e o espaço entre as linhas de volta ao de antes.'] },
