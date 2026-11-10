@@ -89,12 +89,14 @@
   #appTitle:hover { background: var(--hover); }
   #appTitle[contenteditable="false"] { cursor: default; }
   #appTitle[contenteditable="false"]:hover { background: none; }
-  :root[data-theme="dark"] .tab-glass, .dark .tab-glass {
-    background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
-    border-color: rgba(255,255,255,.18);
-    box-shadow: 0 6px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.25);
+  /* Tema escuro: vidro roxo translúcido, sem borda branca */
+  :root[data-theme="dark"] .tab-glass {
+    background: linear-gradient(180deg, rgba(139,124,246,.24), rgba(139,124,246,.12));
+    border-color: rgba(139,124,246,.28);
+    box-shadow: 0 4px 16px rgba(108,92,231,.22), inset 0 1px 0 rgba(255,255,255,.07);
   }
-  :root[data-theme="dark"] .tab-glass::after, .dark .tab-glass::after { opacity: .18; }
+  :root[data-theme="dark"] .tab-glass::after { opacity: .05; }
+  :root[data-theme="dark"] .tabs.glass-on .tab.active { color: #d6d0ff; }
   #appTitle:focus { border-color: var(--primary); background: var(--surface); text-overflow: clip; }
 
   .tabs {
@@ -5273,9 +5275,10 @@
   document.addEventListener('animationend', function (e) { if (e.target.classList && e.target.classList.contains('tab-glass')) e.target.classList.remove('moving'); });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.17.0';
+  var APP_VERSION = '2.17.1';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.17.1', d: '10/11/2026', items: ['Tema escuro: o vidro da aba ativa ficou roxo translúcido, mais discreto.'] },
     { v: '2.17.0', d: '10/11/2026', items: ['Nova aba Meus projetos: seus projetos em cartões, com botões rápidos para andamento (+10% / −10%), prazo (+1 dia, +1 semana ou escolher data), enviar para conferência e recado, sem abrir a ficha.', 'Na mesma aba, os projetos para você conferir, com Aprovar e Devolver com ajustes.', 'A aba Projetos passou a se chamar Quadro.', 'Transição suave estilo vidro ao trocar de aba.'] },
     { v: '2.16.1', d: '10/11/2026', items: ['Agenda sempre abre na semana de hoje: ao entrar na aba e ao trocar de Mês para Semana no mês atual (antes abria na 1ª semana do mês).'] },
     { v: '2.16.0', d: '10/11/2026', items: ['O gestor se atualiza sozinho quando sai uma versão nova: confere de 5 em 5 minutos e recarrega só quando é seguro (nenhuma janela aberta, nada sendo digitado e tudo salvo).'] },
