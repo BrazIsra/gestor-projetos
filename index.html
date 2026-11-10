@@ -2261,7 +2261,7 @@
   function avatarsHTML(ids, showName) {
     var list = ids.map(function (id) { return byId(state.collaborators, id); }).filter(Boolean);
     if (!list.length) return '<span class="muted">-</span>';
-    var max = 3;
+    var max = list.length <= 4 ? 4 : 3; /* até 4 pessoas aparecem todas; o "+N" só a partir de 5 */
     var html = list.slice(0, max).map(function (c) {
       return '<span class="avatar" style="background:' + esc(c.color) + '" title="' + esc(c.name) + '">' + esc(initials(c.name)) + '</span>';
     }).join('');
@@ -5324,9 +5324,10 @@
   document.addEventListener('animationend', function (e) { if (e.target.classList && e.target.classList.contains('tab-glass')) e.target.classList.remove('moving'); });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.19.5';
+  var APP_VERSION = '2.19.6';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.19.6', d: '10/11/2026', items: ['Projetos com 4 responsáveis mostram as 4 bolinhas (o "+1" só aparece a partir de 5 pessoas).'] },
     { v: '2.19.5', d: '10/11/2026', items: ['Celular: a barra de abas rola para o lado, para a aba Configurações não ficar cortada.', 'Meus projetos: "em andamento" conta só Em andamento e Em revisão; nova caixinha "vence hoje", separada de "atrasados"; "para conferir" em azul.', 'Recado em Meus projetos avisa só quem for mencionado com @.', 'Na conversa do projeto, o botão "Devolver com ajustes" de cima some quando o formulário de ajustes está aberto.'] },
     { v: '2.19.4', d: '10/11/2026', items: ['Corrigido: no tema escuro, os nomes da lista "Ver de" em Meus projetos ficavam invisíveis.'] },
     { v: '2.19.3', d: '10/11/2026', items: ['Tema escuro: a aba ativa ficou no mesmo estilo do seletor "Só abertos / Todos" das Estatísticas, mantendo a transição ao trocar de aba.'] },
