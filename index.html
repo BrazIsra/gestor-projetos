@@ -89,14 +89,15 @@
   #appTitle:hover { background: var(--hover); }
   #appTitle[contenteditable="false"] { cursor: default; }
   #appTitle[contenteditable="false"]:hover { background: none; }
-  /* Tema escuro: vidro transparente sem cor, com brilho fino no alto */
+  /* Tema escuro: igual ao seletor "Só abertos / Todos" das Estatísticas (fundo liso, texto claro), deslizando entre as abas */
   :root[data-theme="dark"] .tab-glass {
-    background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.05));
-    border-color: rgba(255,255,255,.10);
-    box-shadow: 0 4px 14px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.16);
+    background: var(--surface);
+    border-color: transparent;
+    box-shadow: var(--shadow-sm);
+    -webkit-backdrop-filter: none; backdrop-filter: none;
   }
   :root[data-theme="dark"] .tab-glass::after { opacity: 0; }
-  :root[data-theme="dark"] .tabs.glass-on .tab.active { color: #fff; }
+  :root[data-theme="dark"] .tabs.glass-on .tab.active { color: var(--text); }
   #appTitle:focus { border-color: var(--primary); background: var(--surface); text-overflow: clip; }
 
   .tabs {
@@ -5307,9 +5308,10 @@
   document.addEventListener('animationend', function (e) { if (e.target.classList && e.target.classList.contains('tab-glass')) e.target.classList.remove('moving'); });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.19.2';
+  var APP_VERSION = '2.19.3';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.19.3', d: '10/11/2026', items: ['Tema escuro: a aba ativa ficou no mesmo estilo do seletor "Só abertos / Todos" das Estatísticas, mantendo a transição ao trocar de aba.'] },
     { v: '2.19.2', d: '10/11/2026', items: ['Meus projetos com a mesma largura do Quadro e o espaço entre as linhas de volta ao de antes.'] },
     { v: '2.19.1', d: '10/11/2026', items: ['Meus projetos mais compacto: linhas mais baixas e colunas proporcionais, como no Quadro.'] },
     { v: '2.19.0', d: '10/11/2026', items: ['Meus projetos mais limpo: os cartões viraram uma lista, com o prazo em texto colorido e uma barra fina de andamento.', 'Resumo em caixinhas (em andamento, atrasados em vermelho, para conferir em laranja).', 'Prazo, recado e conferente em menus pequenos; nome do projeto em maiúsculas e disciplinas com a bolinha da cor.'] },
