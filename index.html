@@ -1074,27 +1074,28 @@
     .modal-foot { padding: 12px 16px; flex-wrap: wrap; }
   }
   /* ---------- Meus projetos (atualização rápida) ---------- */
-  .mine-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 6px 0 4px; }
+  .mine-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 2px 0 0; }
   .mine-head h2 { margin: 0; font-size: 20px; }
   .mks { display: flex; gap: 8px; flex-wrap: wrap; }
-  .mk { display: flex; align-items: baseline; gap: 7px; padding: 7px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-sm); }
-  .mk b { font-size: 18px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+  .mk { display: flex; align-items: baseline; gap: 6px; padding: 5px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-sm); }
+  .mk b { font-size: 16px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
   .mk span { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
   .mk.bad { border-color: var(--danger); } .mk.bad b { color: var(--danger); }
   .mk.chk { border-color: var(--warn); } .mk.chk b { color: var(--warn); }
   .mk.zero b { color: var(--muted); }
   .mine-head .who { margin-left: auto; font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
   .mine-head select { padding: 4px 6px; border-radius: 7px; border: 1px solid var(--border); background: transparent; color: var(--text); font-size: 13px; }
-  .mine-sec { margin: 22px 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .mine-sec { margin: 16px 0 5px; font-size: 12px; font-weight: 600; color: var(--muted); }
   .mine-list { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
-  .mr { display: grid; grid-template-columns: minmax(0, 1fr) 120px 190px 200px; align-items: center; gap: 14px; padding: 11px 16px; border-top: 1px solid var(--border); position: relative; }
+  /* colunas proporcionais como no Quadro, para não sobrar espaço vazio no meio */
+  .mr { display: grid; grid-template-columns: minmax(220px, 2.6fr) minmax(100px, .8fr) minmax(170px, 1.3fr) minmax(190px, 1fr); align-items: center; gap: 12px; padding: 6px 14px; border-top: 1px solid var(--border); position: relative; }
   .mr:first-child { border-top: 0; }
   .mr.flash { animation: mrFlash .9s ease; }
   @keyframes mrFlash { 0% { background: var(--primary-soft); } 100% { background: transparent; } }
   .mr-name { min-width: 0; cursor: pointer; }
-  .mr-name b { display: block; font-weight: 600; font-size: 14px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mr-name b { display: block; font-weight: 600; font-size: 14px; line-height: 1.3; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .mr-name b:hover { color: var(--primary); }
-  .mr-name span { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mr-name span { display: block; font-size: 12px; line-height: 1.3; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .mr-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
   .mr-sep { display: inline-block; width: 10px; }
   .mr-due { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
@@ -5306,9 +5307,10 @@
   document.addEventListener('animationend', function (e) { if (e.target.classList && e.target.classList.contains('tab-glass')) e.target.classList.remove('moving'); });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.19.0';
+  var APP_VERSION = '2.19.1';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.19.1', d: '10/11/2026', items: ['Meus projetos mais compacto: linhas mais baixas e colunas proporcionais, como no Quadro.'] },
     { v: '2.19.0', d: '10/11/2026', items: ['Meus projetos mais limpo: os cartões viraram uma lista, com o prazo em texto colorido e uma barra fina de andamento.', 'Resumo em caixinhas (em andamento, atrasados em vermelho, para conferir em laranja).', 'Prazo, recado e conferente em menus pequenos; nome do projeto em maiúsculas e disciplinas com a bolinha da cor.'] },
     { v: '2.18.1', d: '10/11/2026', items: ['Tema escuro: o vidro da aba ativa ficou transparente, sem cor.'] },
     { v: '2.18.0', d: '10/11/2026', items: ['Cor principal do gestor trocada de roxo para azul (botões, aba ativa, links e barras de andamento), nos temas claro e escuro.', 'No tema escuro, o vidro da aba ativa ganhou um leve tom de azul.'] },
