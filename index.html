@@ -1085,7 +1085,10 @@
   .mk.chk { border-color: var(--warn); } .mk.chk b { color: var(--warn); }
   .mk.zero b { color: var(--muted); }
   .mine-head .who { margin-left: auto; font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
-  .mine-head select { padding: 4px 6px; border-radius: 7px; border: 1px solid var(--border); background: transparent; color: var(--text); font-size: 13px; }
+  /* fundo e cor explícitos: com fundo transparente, a lista aberta ficava branca com letra clara no tema escuro */
+  .mine-head select { padding: 4px 6px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 13px; }
+  .mine-head select option { background: var(--surface); color: var(--text); }
+  [data-theme="dark"] .mine-head select { color-scheme: dark; }
   .mine-sec { margin: 16px 0 5px; font-size: 12px; font-weight: 600; color: var(--muted); }
   .mine-list { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
   /* colunas proporcionais como no Quadro, para não sobrar espaço vazio no meio */
@@ -5308,9 +5311,10 @@
   document.addEventListener('animationend', function (e) { if (e.target.classList && e.target.classList.contains('tab-glass')) e.target.classList.remove('moving'); });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.19.3';
+  var APP_VERSION = '2.19.4';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.19.4', d: '10/11/2026', items: ['Corrigido: no tema escuro, os nomes da lista "Ver de" em Meus projetos ficavam invisíveis.'] },
     { v: '2.19.3', d: '10/11/2026', items: ['Tema escuro: a aba ativa ficou no mesmo estilo do seletor "Só abertos / Todos" das Estatísticas, mantendo a transição ao trocar de aba.'] },
     { v: '2.19.2', d: '10/11/2026', items: ['Meus projetos com a mesma largura do Quadro e o espaço entre as linhas de volta ao de antes.'] },
     { v: '2.19.1', d: '10/11/2026', items: ['Meus projetos mais compacto: linhas mais baixas e colunas proporcionais, como no Quadro.'] },
