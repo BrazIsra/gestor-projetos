@@ -1074,44 +1074,57 @@
     .modal-foot { padding: 12px 16px; flex-wrap: wrap; }
   }
   /* ---------- Meus projetos (atualização rápida) ---------- */
-  .mine-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 4px 0 16px; }
+  .mine-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 6px 0 4px; }
   .mine-head h2 { margin: 0; font-size: 20px; }
-  .mine-head .who { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
-  .mine-head select, .mc-conf select { padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 13px; }
-  .mine-sum { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
-  .mine-sum .pill { padding: 8px 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); font-size: 13px; }
-  .mine-sum .pill b { font-size: 16px; margin-right: 5px; }
-  .mine-sum .pill.bad b { color: var(--danger); }
-  .mine-sec { margin: 22px 0 10px; font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
-  .mine-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
-  .mc { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--mc, var(--border)); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
-  .mc.flash { animation: mcFlash .8s ease; }
-  @keyframes mcFlash { 0% { box-shadow: 0 0 0 3px rgba(37,99,235,.35); } 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); } }
-  .mc-top { display: flex; align-items: flex-start; gap: 8px; }
-  .mc-name { font-weight: 700; font-size: 15px; line-height: 1.3; flex: 1; cursor: pointer; }
-  .mc-name:hover { color: var(--primary); }
-  .mc-sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; font-weight: 400; }
-  .mc-due { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; background: var(--hover); color: var(--muted); }
-  .mc-due.late { background: rgba(229,72,77,.14); color: var(--danger); }
-  .mc-due.soon { background: rgba(245,166,35,.18); color: #b7791f; }
-  .mc-due.ok { background: rgba(34,160,107,.14); color: #22a06b; }
-  .mc-prog { display: flex; align-items: center; gap: 8px; }
-  .mc-prog .bar { flex: 1; height: 10px; border-radius: 999px; background: var(--hover); overflow: hidden; }
-  .mc-prog .bar span { display: block; height: 100%; background: var(--primary); border-radius: 999px; transition: width .25s ease; }
-  .mc-prog .pct { width: 42px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .mc-step { width: 40px; height: 34px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 18px; font-weight: 700; cursor: pointer; }
-  .mc-step:hover { border-color: var(--primary); color: var(--primary); }
-  .mc-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .mc-row .lbl { font-size: 12px; color: var(--muted); width: 44px; }
-  .mc-date { position: relative; overflow: hidden; }
-  .mc-date input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-  .mc-foot { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 10px; }
-  .mc-foot .grow { flex: 1; }
-  .mc .btn-ok { background: #22a06b; border-color: #22a06b; color: #fff; }
-  .mc-note { display: flex; gap: 6px; }
-  .mc-note textarea { flex: 1; min-height: 38px; resize: vertical; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-size: 13px; }
-  .mine-empty { padding: 28px; text-align: center; color: var(--muted); background: var(--surface); border: 1px dashed var(--border); border-radius: 12px; }
-  @media (max-width: 560px) { .mine-grid { grid-template-columns: 1fr; } .mc-step { width: 46px; height: 40px; } .mine-head .who { margin-left: 0; } }
+  .mks { display: flex; gap: 8px; flex-wrap: wrap; }
+  .mk { display: flex; align-items: baseline; gap: 7px; padding: 7px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-sm); }
+  .mk b { font-size: 18px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+  .mk span { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .mk.bad { border-color: var(--danger); } .mk.bad b { color: var(--danger); }
+  .mk.chk { border-color: var(--warn); } .mk.chk b { color: var(--warn); }
+  .mk.zero b { color: var(--muted); }
+  .mine-head .who { margin-left: auto; font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .mine-head select { padding: 4px 6px; border-radius: 7px; border: 1px solid var(--border); background: transparent; color: var(--text); font-size: 13px; }
+  .mine-sec { margin: 22px 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .mine-list { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+  .mr { display: grid; grid-template-columns: minmax(0, 1fr) 120px 190px 200px; align-items: center; gap: 14px; padding: 11px 16px; border-top: 1px solid var(--border); position: relative; }
+  .mr:first-child { border-top: 0; }
+  .mr.flash { animation: mrFlash .9s ease; }
+  @keyframes mrFlash { 0% { background: var(--primary-soft); } 100% { background: transparent; } }
+  .mr-name { min-width: 0; cursor: pointer; }
+  .mr-name b { display: block; font-weight: 600; font-size: 14px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mr-name b:hover { color: var(--primary); }
+  .mr-name span { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mr-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+  .mr-sep { display: inline-block; width: 10px; }
+  .mr-due { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+  .mr-due.late { color: var(--danger); font-weight: 600; }
+  .mr-due.soon { color: #c27c0e; font-weight: 600; }
+  .mr-prog { display: flex; align-items: center; gap: 6px; }
+  .mr-prog .bar { flex: 1; height: 5px; border-radius: 999px; background: var(--hover); overflow: hidden; }
+  .mr-prog .bar span { display: block; height: 100%; background: var(--primary); border-radius: 999px; transition: width .25s ease; }
+  .mr-prog .pct { width: 34px; text-align: right; font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .mr-ic { width: 26px; height: 26px; border-radius: 7px; border: 0; background: transparent; color: var(--muted); cursor: pointer; display: inline-grid; place-items: center; font-size: 16px; line-height: 1; padding: 0; }
+  .mr-ic:hover { background: var(--hover); color: var(--text); }
+  .mr-ic svg { width: 16px; height: 16px; }
+  .mr-act { display: flex; justify-content: flex-end; gap: 2px; }
+  .mr-act .txt { width: auto; padding: 0 9px; font-size: 12.5px; font-weight: 600; }
+  .mr-act .txt.go { color: var(--primary); }
+  .mr-act .txt.go:hover { background: var(--primary-soft); color: var(--primary); }
+  .mr-pop { position: absolute; right: 16px; top: calc(100% - 6px); z-index: 6; min-width: 190px; padding: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 2px; }
+  .mr-pop button, .mr-pop label { text-align: left; border: 0; background: transparent; color: var(--text); padding: 7px 10px; border-radius: 7px; font-size: 13px; cursor: pointer; position: relative; }
+  .mr-pop button:hover, .mr-pop label:hover { background: var(--hover); }
+  .mr-pop label input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .mr-pop .t { font-size: 11.5px; color: var(--muted); padding: 4px 10px 2px; }
+  .mr-pop textarea { width: 260px; min-height: 60px; resize: vertical; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-size: 13px; }
+  .mr-pop .row { display: flex; justify-content: flex-end; gap: 6px; padding-top: 4px; }
+  .mine-empty { padding: 22px; text-align: center; color: var(--muted); font-size: 13px; }
+  @media (max-width: 760px) {
+    .mr { grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; }
+    .mr-prog { grid-column: 1 / -1; }
+    .mr-act { grid-column: 1 / -1; justify-content: flex-start; }
+    .mine-head .who { margin-left: 0; }
+  }
 </style>
 </head>
 <body>
@@ -5126,50 +5139,62 @@
 
   /* =========================================================
      Meus projetos: atualização rápida, sem abrir a ficha
+     Lista limpa; os botões aparecem ao passar o mouse.
      ========================================================= */
   var mineEl = $('#mine');
-  var mineUi = { who: '', note: '', flash: '' };
+  var mineUi = { who: '', pop: '', popId: '', flash: '' };
+  var MI = {
+    cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>',
+    msg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>'
+  };
   function mineWho() { return mineUi.who || currentUser() || (state.collaborators[0] && state.collaborators[0].id) || ''; }
   function mineDue(p) {
     var d = daysUntil(p.deadline);
-    if (d === null) return '<span class="mc-due">Sem prazo</span>';
-    if (d < 0) return '<span class="mc-due late">Atrasado ' + (-d) + (d === -1 ? ' dia' : ' dias') + '</span>';
-    if (d === 0) return '<span class="mc-due late">Vence hoje</span>';
-    if (d === 1) return '<span class="mc-due soon">Vence amanhã</span>';
-    if (d <= 3) return '<span class="mc-due soon">Vence em ' + d + ' dias</span>';
-    return '<span class="mc-due ok">' + fmtDate(p.deadline).slice(0, 5) + ' · em ' + d + ' dias</span>';
+    if (d === null) return '<span class="mr-due">Sem prazo</span>';
+    if (d < 0) return '<span class="mr-due late">Atrasado ' + (-d) + (d === -1 ? ' dia' : ' dias') + '</span>';
+    if (d === 0) return '<span class="mr-due late">Vence hoje</span>';
+    if (d === 1) return '<span class="mr-due soon">Amanhã</span>';
+    if (d <= 3) return '<span class="mr-due soon">Em ' + d + ' dias</span>';
+    return '<span class="mr-due">' + fmtDate(p.deadline).slice(0, 5) + '</span>';
   }
-  function mineCard(p, forCheck) {
-    var st = byId(state.statuses, p.statusId);
-    var discs = p.typeIds.map(function (id) { return nameIn(state.types, id, ''); }).filter(Boolean).join(', ');
-    var sub = (st ? st.name : 'Sem status') + (discs ? ' · ' + discs : '') + (p.client ? ' · ' + p.client : '');
-    var h = '<div class="mc' + (mineUi.flash === p.id ? ' flash' : '') + '" data-mc="' + esc(p.id) + '" style="--mc:' + esc(st ? st.color : '') + '">' +
-      '<div class="mc-top"><div class="mc-name" data-mc-open title="Abrir a ficha completa">' + esc(fmtName(p.name)) + '<div class="mc-sub">' + esc(sub) + '</div></div>' + mineDue(p) + '</div>';
-    if (forCheck) {
-      h += '<div class="mc-row"><span class="muted" style="font-size:13px">' + esc(p.responsibles.map(whoName).join(', ') || 'Alguém') + ' enviou para você conferir.</span></div>' +
-        '<div class="mc-foot"><button type="button" class="btn btn-ok sm" data-mq="approve">Aprovar</button>' +
-        '<button type="button" class="btn sm" data-mc-open>Devolver com ajustes</button><span class="grow"></span>' +
-        '<button type="button" class="btn sm" data-mq="note">Recado</button></div>';
-    } else {
-      h += '<div class="mc-prog"><button type="button" class="mc-step" data-mq="p-10" title="Menos 10%" aria-label="Menos 10%">−</button>' +
+  function minePop(p) {
+    if (mineUi.popId !== p.id) return '';
+    if (mineUi.pop === 'date') {
+      return '<div class="mr-pop"><div class="t">Mudar o prazo</div>' +
+        '<button type="button" data-mq="d+1">+1 dia</button><button type="button" data-mq="d+7">+1 semana</button>' +
+        '<label>Escolher data…<input type="date" data-mq-date value="' + esc(p.deadline || '') + '"></label></div>';
+    }
+    if (mineUi.pop === 'checker') {
+      return '<div class="mr-pop"><div class="t">Quem vai conferir?</div>' + state.collaborators.filter(function (c) { return c.id !== mineWho(); }).map(function (c) {
+        return '<button type="button" data-mq-checker="' + esc(c.id) + '">' + esc(c.name) + '</button>'; }).join('') + '</div>';
+    }
+    if (mineUi.pop === 'note') {
+      return '<div class="mr-pop"><textarea data-mq-text placeholder="Recado (@ para mencionar)"></textarea>' +
+        '<div class="row"><button type="button" class="btn sm" data-mq="close">Cancelar</button><button type="button" class="btn btn-primary sm" data-mq="note-send">Enviar</button></div></div>';
+    }
+    return '';
+  }
+  function mineRow(p, kind) {
+    /* disciplinas com a bolinha da cor, como no Quadro */
+    var discs = p.typeIds.map(function (id) { var t = byId(state.types, id); return t ? '<i class="mr-dot" style="background:' + esc(t.color) + '"></i>' + esc(t.name) : ''; }).filter(Boolean).join('<i class="mr-sep"></i>');
+    var sub = kind === 'check' ? esc('De ' + (p.responsibles.map(whoName).join(', ') || 'alguém')) :
+      (kind === 'wait' ? esc('Com ' + whoName(p.checker) + ' para conferir') : (discs || esc(nameIn(state.statuses, p.statusId, ''))));
+    var h = '<div class="mr' + (mineUi.flash === p.id ? ' flash' : '') + (mineUi.popId === p.id ? ' open' : '') + '" data-mc="' + esc(p.id) + '">' +
+      '<div class="mr-name" data-mc-open title="Abrir a ficha"><b>' + esc(fmtName(p.name)) + '</b><span>' + sub + '</span></div>' + mineDue(p);
+    if (kind === 'mine') {
+      h += '<div class="mr-prog"><button type="button" class="mr-ic mr-step" data-mq="p-10" title="Menos 10%">−</button>' +
         '<div class="bar"><span style="width:' + p.progress + '%"></span></div><span class="pct">' + p.progress + '%</span>' +
-        '<button type="button" class="mc-step" data-mq="p+10" title="Mais 10%" aria-label="Mais 10%">+</button></div>' +
-        '<div class="mc-row"><span class="lbl">Prazo</span>' +
-        '<button type="button" class="btn sm" data-mq="d+1">+1 dia</button>' +
-        '<button type="button" class="btn sm" data-mq="d+7">+1 semana</button>' +
-        '<span class="btn sm mc-date">Escolher data<input type="date" data-mq-date value="' + esc(p.deadline || '') + '" aria-label="Escolher data do prazo"></span></div>' +
-        '<div class="mc-foot mc-conf">';
-      if (confStatusId()) {
-        if (p.checker) h += '<button type="button" class="btn btn-ok sm" data-mq="conf">Enviar para ' + esc(whoName(p.checker)) + ' conferir</button>';
-        else h += '<select data-mq-checker aria-label="Conferente"><option value="">Quem confere?</option>' + state.collaborators.filter(function (c) { return c.id !== mineWho(); }).map(function (c) { return '<option value="' + esc(c.id) + '">' + esc(c.name) + '</option>'; }).join('') + '</select>' +
-          '<button type="button" class="btn btn-ok sm" data-mq="conf">Enviar para conferência</button>';
-      }
-      h += '<span class="grow"></span><button type="button" class="btn sm" data-mq="note">Recado</button></div>';
+        '<button type="button" class="mr-ic mr-step" data-mq="p+10" title="Mais 10%">+</button></div>' +
+        '<div class="mr-act"><button type="button" class="mr-ic" data-mq="pop-date" title="Mudar o prazo">' + MI.cal + '</button>' +
+        '<button type="button" class="mr-ic" data-mq="pop-note" title="Recado">' + MI.msg + '</button>' +
+        (confStatusId() ? '<button type="button" class="mr-ic txt go" data-mq="conf" title="' + (p.checker ? 'Enviar para ' + esc(whoName(p.checker)) + ' conferir' : 'Escolher quem confere') + '">Conferência →</button>' : '') + '</div>';
+    } else if (kind === 'check') {
+      h += '<div></div><div class="mr-act"><button type="button" class="mr-ic" data-mq="pop-note" title="Recado">' + MI.msg + '</button>' +
+        '<button type="button" class="mr-ic txt" data-mc-open>Devolver</button><button type="button" class="mr-ic txt go" data-mq="approve">Aprovar</button></div>';
+    } else {
+      h += '<div></div><div></div>';
     }
-    if (mineUi.note === p.id) {
-      h += '<div class="mc-note"><textarea data-mq-text placeholder="Escreva um recado (@ para mencionar)"></textarea><button type="button" class="btn btn-primary sm" data-mq="note-send">Enviar</button></div>';
-    }
-    return h + '</div>';
+    return h + minePop(p) + '</div>';
   }
   function renderMine() {
     if (!mineEl) return;
@@ -5179,28 +5204,26 @@
     var toCheck = open.filter(function (p) { return isConfStatus(p.statusId) && p.checker === me; });
     var waiting = open.filter(function (p) { return isConfStatus(p.statusId) && p.checker !== me && p.responsibles.indexOf(me) >= 0; });
     var byDue = function (a, b) { var x = a.deadline || '9999', y = b.deadline || '9999'; return x < y ? -1 : (x > y ? 1 : 0); };
-    mine.sort(byDue); toCheck.sort(byDue);
+    mine.sort(byDue); toCheck.sort(byDue); waiting.sort(byDue);
     var late = mine.filter(function (p) { var d = daysUntil(p.deadline); return d !== null && d <= 0; }).length;
-    var week = mine.filter(function (p) { var d = daysUntil(p.deadline); return d !== null && d > 0 && d <= 7; }).length;
-    var html = '<div class="mine-head"><h2>Olá, ' + esc(whoName(me).split(' ')[0]) + '</h2>' +
-      '<label class="who">Ver projetos de <select id="mineWho">' + state.collaborators.map(function (c) {
-        return '<option value="' + esc(c.id) + '"' + (c.id === me ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label></div>' +
-      '<div class="mine-sum"><span class="pill"><b>' + mine.length + '</b>em andamento</span>' +
-      '<span class="pill' + (late ? ' bad' : '') + '"><b>' + late + '</b>atrasados ou vencendo hoje</span>' +
-      '<span class="pill"><b>' + week + '</b>vencem nesta semana</span>' +
-      '<span class="pill"><b>' + toCheck.length + '</b>para você conferir</span></div>';
-    if (toCheck.length) html += '<div class="mine-sec">Para você conferir</div><div class="mine-grid">' + toCheck.map(function (p) { return mineCard(p, true); }).join('') + '</div>';
-    html += '<div class="mine-sec">Seus projetos</div>' + (mine.length ? '<div class="mine-grid">' + mine.map(function (p) { return mineCard(p, false); }).join('') + '</div>' :
-      '<div class="mine-empty">Nenhum projeto em andamento com você.</div>');
-    if (waiting.length) html += '<div class="mine-sec">Seus projetos em conferência</div><div class="mine-grid">' + waiting.map(function (p) {
-      return '<div class="mc" data-mc="' + esc(p.id) + '"><div class="mc-top"><div class="mc-name" data-mc-open>' + esc(fmtName(p.name)) + '<div class="mc-sub">Com ' + esc(whoName(p.checker)) + ' para conferir</div></div>' + mineDue(p) + '</div></div>';
-    }).join('') + '</div>';
+    /* caixinhas no estilo das Estatísticas */
+    var box = function (n, label, cls) { return '<div class="mk' + (cls ? ' ' + cls : '') + '"><b>' + n + '</b><span>' + label + '</span></div>'; };
+    var sum = box(mine.length, 'em andamento', '') + box(late, late === 1 ? 'atrasado' : 'atrasados', late ? 'bad' : 'zero') +
+      box(toCheck.length, 'para conferir', toCheck.length ? 'chk' : 'zero');
+    var html = '<div class="mine-head"><h2>Olá, ' + esc(whoName(me).split(' ')[0]) + '</h2><div class="mks">' + sum + '</div>' +
+      '<label class="who">Ver de <select id="mineWho">' + state.collaborators.map(function (c) {
+        return '<option value="' + esc(c.id) + '"' + (c.id === me ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label></div>';
+    if (toCheck.length) html += '<div class="mine-sec">Para você conferir</div><div class="mine-list">' + toCheck.map(function (p) { return mineRow(p, 'check'); }).join('') + '</div>';
+    html += '<div class="mine-sec">Seus projetos</div><div class="mine-list">' + (mine.length ? mine.map(function (p) { return mineRow(p, 'mine'); }).join('') :
+      '<div class="mine-empty">Nenhum projeto em andamento com você.</div>') + '</div>';
+    if (waiting.length) html += '<div class="mine-sec">Em conferência</div><div class="mine-list">' + waiting.map(function (p) { return mineRow(p, 'wait'); }).join('') + '</div>';
     mineEl.innerHTML = html;
     mineUi.flash = '';
-    if (mineUi.note) { var ta = $('[data-mq-text]', mineEl); if (ta) ta.focus(); }
+    if (mineUi.pop === 'note') { var ta = $('[data-mq-text]', mineEl); if (ta) ta.focus(); }
   }
+  function mineClosePop() { if (mineUi.popId) { mineUi.pop = ''; mineUi.popId = ''; renderMine(); } }
   function mineDone(p, msg) {
-    mineUi.flash = p.id;
+    mineUi.flash = p.id; mineUi.pop = ''; mineUi.popId = '';
     save(); refreshData();
     if (msg) toast(msg);
   }
@@ -5210,18 +5233,25 @@
     d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + n);
     return isoDay(d);
   }
+  function mineSendConf(p) {
+    changeStatus(p, confStatusId());
+    mineDone(p, 'Enviado para ' + whoName(p.checker) + ' conferir.');
+  }
   if (mineEl) {
+    document.addEventListener('pointerdown', function (e) { if (mineUi.popId && !e.target.closest('.mr.open')) mineClosePop(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && mineUi.popId) mineClosePop(); });
     mineEl.addEventListener('change', function (e) {
-      if (e.target.id === 'mineWho') { mineUi.who = e.target.value; mineUi.note = ''; renderMine(); return; }
-      var card = e.target.closest('[data-mc]'); if (!card) return;
-      var p = byId(state.projects, card.dataset.mc); if (!p) return;
+      if (e.target.id === 'mineWho') { mineUi.who = e.target.value; mineUi.pop = ''; mineUi.popId = ''; renderMine(); return; }
+      var row = e.target.closest('[data-mc]'); if (!row) return;
+      var p = byId(state.projects, row.dataset.mc); if (!p) return;
       if (e.target.matches('[data-mq-date]') && e.target.value) { p.deadline = e.target.value; mineDone(p, 'Prazo: ' + fmtDate(p.deadline) + '.'); }
-      else if (e.target.matches('[data-mq-checker]')) { p.checker = e.target.value; }
     });
     mineEl.addEventListener('click', function (e) {
-      var card = e.target.closest('[data-mc]'); if (!card) return;
-      var p = byId(state.projects, card.dataset.mc); if (!p) return;
+      var row = e.target.closest('[data-mc]'); if (!row) return;
+      var p = byId(state.projects, row.dataset.mc); if (!p) return;
       if (e.target.closest('[data-mc-open]')) { openProject(p.id); return; }
+      var ck = e.target.closest('[data-mq-checker]');
+      if (ck) { p.checker = ck.dataset.mqChecker; mineSendConf(p); return; }
       var b = e.target.closest('[data-mq]'); if (!b) return;
       var a = b.dataset.mq;
       if (a === 'p+10' || a === 'p-10') {
@@ -5230,28 +5260,29 @@
       } else if (a === 'd+1' || a === 'd+7') {
         p.deadline = addDaysISO(p.deadline, a === 'd+1' ? 1 : 7);
         mineDone(p, 'Prazo: ' + fmtDate(p.deadline) + '.');
+      } else if (a === 'pop-date' || a === 'pop-note') {
+        var k = a === 'pop-date' ? 'date' : 'note';
+        if (mineUi.popId === p.id && mineUi.pop === k) { mineClosePop(); return; }
+        mineUi.pop = k; mineUi.popId = p.id; renderMine();
       } else if (a === 'conf') {
-        if (!p.checker) { var sel = $('[data-mq-checker]', card); if (sel) sel.focus(); toast('Escolha quem vai conferir.'); return; }
-        changeStatus(p, confStatusId());
-        mineDone(p, 'Enviado para ' + whoName(p.checker) + ' conferir.');
+        if (!p.checker) { mineUi.pop = 'checker'; mineUi.popId = p.id; renderMine(); return; }
+        mineSendConf(p);
       } else if (a === 'approve') {
         var done = doneStatusId(); if (!done) { toast('Crie um status "Concluído" em Configurações.'); return; }
         skipStatusLog[p.id] = true;
         changeStatus(p, done);
         addComment(p, 'Aprovou o projeto. Movido para ' + byId(state.statuses, done).name + '.', 'sys');
         mineDone(p, 'Projeto aprovado.');
-      } else if (a === 'note') {
-        mineUi.note = mineUi.note === p.id ? '' : p.id; renderMine();
+      } else if (a === 'close') {
+        mineClosePop();
       } else if (a === 'note-send') {
-        var t = ($('[data-mq-text]', card).value || '').trim();
+        var t = ($('[data-mq-text]', row).value || '').trim();
         if (!t) { toast('Escreva o recado.'); return; }
         addComment(p, t, '', mentionsIn(t).concat(p.responsibles, p.checker ? [p.checker] : []));
-        mineUi.note = '';
         mineDone(p, 'Recado enviado.');
       }
     });
   }
-
 
   /* Vidro da aba ativa: desliza até a aba escolhida */
   var glassFirst = true;
@@ -5275,9 +5306,10 @@
   document.addEventListener('animationend', function (e) { if (e.target.classList && e.target.classList.contains('tab-glass')) e.target.classList.remove('moving'); });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.18.1';
+  var APP_VERSION = '2.19.0';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.19.0', d: '10/11/2026', items: ['Meus projetos mais limpo: os cartões viraram uma lista, com o prazo em texto colorido e uma barra fina de andamento.', 'Resumo em caixinhas (em andamento, atrasados em vermelho, para conferir em laranja).', 'Prazo, recado e conferente em menus pequenos; nome do projeto em maiúsculas e disciplinas com a bolinha da cor.'] },
     { v: '2.18.1', d: '10/11/2026', items: ['Tema escuro: o vidro da aba ativa ficou transparente, sem cor.'] },
     { v: '2.18.0', d: '10/11/2026', items: ['Cor principal do gestor trocada de roxo para azul (botões, aba ativa, links e barras de andamento), nos temas claro e escuro.', 'No tema escuro, o vidro da aba ativa ganhou um leve tom de azul.'] },
     { v: '2.17.2', d: '10/11/2026', items: ['Tema escuro: o vidro da aba ativa virou um cinza grafite fosco, neutro e discreto.'] },
