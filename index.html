@@ -333,7 +333,10 @@
   textarea { resize: vertical; }
   input[type="date"] { min-height: 38px; }
 
-  main { padding: 24px 24px 8px; }
+  /* o conteúdo ocupa pelo menos a tela toda, para o rodapé ficar sempre no fim da tela */
+  body { display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; }
+  main { padding: 24px 24px 8px; flex: 1 0 auto; }
+  .app-foot { flex: none; }
   .agenda { max-width: 1400px; margin: 0 auto; }
   .ag-filters { max-width: 1400px; margin: 0 auto; height: 0; position: relative; z-index: 20; display: flex; }
   @media (max-width: 900px) { .ag-filters { height: auto; margin-bottom: 10px; } }
@@ -5329,9 +5332,10 @@
   document.addEventListener('animationend', function (e) { if (e.target.classList && e.target.classList.contains('tab-glass')) e.target.classList.remove('moving'); });
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.20.1';
+  var APP_VERSION = '2.20.2';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.20.2', d: '11/11/2026', items: ['O rodapé (versão e "Developed by") fica sempre no fim da tela, mesmo quando a página tem pouco conteúdo.'] },
     { v: '2.20.1', d: '10/11/2026', items: ['Pessoal mostra só os projetos Em andamento e Em revisão (Em espera e Não iniciado saíram); os em conferência continuam na parte de baixo.'] },
     { v: '2.20.0', d: '10/11/2026', items: ['Ficha do projeto: saíram os campos Cliente e Local / Obra, e a ficha ficou uma linha menor.', 'O que estava escrito neles foi para o fim da descrição (ex.: "Cliente: ENG. FABRICIO SENS"), sem apagar o que já havia na descrição.'] },
     { v: '2.19.7', d: '10/11/2026', items: ['A aba Meus projetos passou a se chamar Pessoal.'] },
