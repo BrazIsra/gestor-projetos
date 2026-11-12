@@ -701,6 +701,12 @@
   }
   .prog-pop-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 13px; font-weight: 600; }
   .prog-pop-head span:last-child { font-size: 18px; color: var(--primary); font-variant-numeric: tabular-nums; }
+  .prog-pop.pp-multi { width: 300px; }
+  .pp-list { display: flex; flex-direction: column; gap: 8px; }
+  .pp-row { display: grid; grid-template-columns: 110px 1fr 40px; align-items: center; gap: 8px; font-size: 13px; }
+  .pp-row .pp-name { display: inline-flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pp-row b { text-align: right; font-variant-numeric: tabular-nums; }
+  .pp-note { margin-top: 10px; font-size: 11.5px; color: var(--muted); }
   .prog-quick { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 10px; }
   .prog-quick button { padding: 5px 0; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); font-size: 12px; font-weight: 600; cursor: pointer; }
   .prog-quick button:hover, .prog-quick button.on { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
@@ -787,6 +793,14 @@
   .card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
   .card-meta .tag { font-size: 12.5px; }
   .tags { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; }
+  .prog-lbl { display: flex; align-items: baseline; gap: 6px; }
+  .prog-lbl #progGeral { margin-left: auto; font-size: 18px; color: var(--primary); font-variant-numeric: tabular-nums; }
+  .calc-note { display: none; font-weight: 400; font-size: 11.5px; color: var(--muted); }
+  .field:has(#progField[hidden]) .calc-note { display: inline; }
+  .dprog-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 28px; }
+  .dprog-list .pp-row { grid-template-columns: 120px 1fr 40px; }
+  .dprog-list[hidden], #progField[hidden] { display: none; }
+  @media (max-width: 760px) { .dprog-list { grid-template-columns: 1fr; } }
   .disc-picker { display: flex; flex-wrap: wrap; gap: 6px; min-height: 40px; align-items: center; }
   .disc { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: inherit; font: inherit; font-size: 13px; cursor: pointer; }
   .disc:hover { background: var(--hover); }
@@ -1275,8 +1289,9 @@
         <input id="f-location" autocomplete="off">
       </div>
       <div class="field full">
-        <label for="f-progress">Andamento</label>
-        <div class="prog-field">
+        <label for="f-progress" class="prog-lbl">Andamento <span class="calc-note">geral (média das disciplinas)</span><b id="progGeral" hidden>0%</b></label>
+        <div id="dprogList" class="dprog-list" hidden></div>
+        <div class="prog-field" id="progField">
           <input id="f-progress-range" class="prog-range" type="range" min="0" max="100" step="5" value="0" aria-label="Andamento em porcentagem">
           <input id="f-progress" class="input" type="number" min="0" max="100" step="1" value="0" inputmode="numeric">
           <span class="muted">%</span>
@@ -1586,6 +1601,7 @@
         checker: typeof p.checker === 'string' ? p.checker : '',
         notes: '',
         progress: normProgress(p.progress, p.statusId, out.statuses),
+        dprog: (p.dprog && typeof p.dprog === 'object') ? p.dprog : null,
         createdAt: /^\d{4}-\d{2}-\d{2}$/.test(p.createdAt || '') ? p.createdAt : '',
         completedAt: /^\d{4}-\d{2}-\d{2}$/.test(p.completedAt || '') ? p.completedAt : '',
         comments: (Array.isArray(p.comments) ? p.comments : []).filter(function (c) { return c && c.text; }).map(function (c) {
@@ -1604,6 +1620,16 @@
             checker: String(o.checker || ''), reason: String(o.reason || ''), service: String(o.service || ''), obs: String(o.obs || '') };
         })
       };
+    });
+    /* andamento por disciplina: na primeira vez, cada disciplina começa com o andamento do projeto */
+    out.projects.forEach(function (p) {
+      var src = p.dprog, dp = {};
+      p.typeIds.forEach(function (t) {
+        var v = src ? Number(src[t]) : p.progress;
+        dp[t] = isFinite(v) ? Math.max(0, Math.min(100, Math.round(v))) : 0;
+      });
+      p.dprog = dp;
+      if (p.typeIds.length) p.progress = calcProg(p.typeIds, dp);
     });
     var f = emptyFilters();
     var src = (d.filters && typeof d.filters === 'object') ? d.filters : {};
@@ -1973,7 +1999,24 @@
     if (!settingsEl.contains(document.activeElement)) renderSettings();
   }
 
+  /* Andamento geral = média simples das disciplinas */
+  function calcProg(typeIds, dp) {
+    if (!typeIds.length) return 0;
+    return Math.round(typeIds.reduce(function (a, t) { return a + (Number(dp[t]) || 0); }, 0) / typeIds.length);
+  }
+  function syncProg(p) {
+    p.dprog = p.dprog || {};
+    var dp = {};
+    p.typeIds.forEach(function (t) { dp[t] = p.dprog[t] !== undefined ? p.dprog[t] : 0; });
+    p.dprog = dp;
+    if (p.typeIds.length) p.progress = calcProg(p.typeIds, dp);
+  }
+  function progTitle(p) {
+    if (!p.typeIds.length) return 'Clique para mudar o andamento';
+    return p.typeIds.map(function (t) { return nameIn(state.types, t, '') + ': ' + (p.dprog[t] || 0) + '%'; }).join('\n');
+  }
   function save() {
+    state.projects.forEach(syncProg);
     osWatch(true);
     scheduleLog();
     writeLocal(PREFS_KEY, pick(state, LOCAL_KEYS));
@@ -2089,7 +2132,7 @@
   function changeStatus(p, newStatus) {
     p.statusId = newStatus;
     if (clearsPriority(newStatus)) p.priorityId = noPriorityId();
-    if (isDoneStatus(newStatus)) { p.progress = 100; if (!p.completedAt) p.completedAt = isoOffset(0); }
+    if (isDoneStatus(newStatus)) { p.progress = 100; p.typeIds.forEach(function (t) { p.dprog = p.dprog || {}; p.dprog[t] = 100; }); if (!p.completedAt) p.completedAt = isoOffset(0); }
     else p.completedAt = '';
   }
 
@@ -2521,7 +2564,7 @@
       '<div class="cell c-name"><div class="p-name">' + esc(p.name) + '</div>' + (sub ? '<div class="p-desc">' + esc(sub) + '</div>' : '') + flagsHTML(p) + '</div>' +
       '<div class="cell fill c-prio" data-label="Prioridade" tabindex="0" role="button" title="Clique para mudar a prioridade">' + pill(pr, 'Sem prioridade') + '</div>' +
       '<div class="cell c-due" data-label="Prazo" tabindex="0" role="button" title="Clique para mudar o prazo">' + dueHTML(p) + '</div>' +
-      '<div class="cell c-prog" data-label="Andamento" tabindex="0" role="button" title="Clique para mudar o andamento">' + progHTML(p.progress) + '</div>' +
+      '<div class="cell c-prog" data-label="Andamento" tabindex="0" role="button" title="' + esc(progTitle(p)) + '">' + progHTML(p.progress) + '</div>' +
       (isConfStatus(p.statusId)
         ? '<div class="cell c-resp c-chk" data-label="Conferente" tabindex="0" role="button" title="Clique para escolher o conferente"><span class="resp-wrap">' + avatarsHTML(p.checker ? [p.checker] : [], true) + '</span></div>'
         : '<div class="cell c-resp" data-label="Responsável" tabindex="0" role="button" title="Clique para mudar os responsáveis"><span class="resp-wrap">' + avatarsHTML(p.responsibles, true) + '</span></div>') +
@@ -3796,16 +3839,40 @@
   /* ---------- Mudar o andamento direto na linha ---------- */
   var progPop = $('#progPop');
   var progCtx = null;
-  function openProgPop(anchor, id) {
-    var p = byId(state.projects, id);
-    if (!p) return;
+  /* ctx.form: ficha aberta (valores em formDprog); ctx.t: uma disciplina só */
+  function ppGet(t) {
+    if (progCtx.form) return Number(formDprog[t]) || 0;
+    var p = byId(state.projects, progCtx.id);
+    return t ? (Number(p.dprog[t]) || 0) : p.progress;
+  }
+  function ppRows(p) {
+    var ids = progCtx.form ? [progCtx.t] : (progCtx.t ? [progCtx.t] : p.typeIds);
+    return ids;
+  }
+  function openProgPop(anchor, id, opt) {
+    opt = opt || {};
+    var p = opt.form ? null : byId(state.projects, id);
+    if (!opt.form && !p) return;
     closePop();
-    progCtx = { anchor: anchor, id: id, changed: false };
-    progPop.innerHTML = '<div class="prog-pop-head"><span>Andamento</span><span id="progPopNum">' + p.progress + '%</span></div>' +
-      '<input type="range" class="prog-range" id="progPopRange" min="0" max="100" step="5" value="' + p.progress + '" style="--p:' + (p.progress / 100) + '" aria-label="Andamento em porcentagem">' +
-      '<div class="prog-quick">' + [0, 25, 50, 75, 100].map(function (v) {
-        return '<button type="button" data-v="' + v + '"' + (p.progress === v ? ' class="on"' : '') + '>' + v + '%</button>';
-      }).join('') + '</div>';
+    progCtx = { anchor: anchor, id: id, changed: false, form: !!opt.form, t: opt.t || '' };
+    var multi = !progCtx.form && !progCtx.t && p.typeIds.length > 0;
+    if (multi) {
+      progPop.innerHTML = '<div class="prog-pop-head"><span>Andamento geral</span><span id="progPopNum">' + p.progress + '%</span></div>' +
+        '<div class="pp-list">' + p.typeIds.map(function (t) {
+          var ty = byId(state.types, t), v = Number(p.dprog[t]) || 0;
+          return '<div class="pp-row"><span class="pp-name"><span class="dot" style="background:' + esc(ty ? ty.color : '#888') + '"></span>' + esc(ty ? ty.name : '?') + '</span>' +
+            '<input type="range" class="prog-range" data-pt="' + esc(t) + '" min="0" max="100" step="5" value="' + v + '" style="--p:' + (v / 100) + '" aria-label="Andamento de ' + esc(ty ? ty.name : '') + '">' +
+            '<b data-pn="' + esc(t) + '">' + v + '%</b></div>';
+        }).join('') + '</div><div class="pp-note">O geral é a média das disciplinas.</div>';
+    } else {
+      var v0 = ppGet(progCtx.t), ty0 = progCtx.t ? byId(state.types, progCtx.t) : null;
+      progPop.innerHTML = '<div class="prog-pop-head"><span>' + (ty0 ? esc(ty0.name) : 'Andamento') + '</span><span id="progPopNum">' + v0 + '%</span></div>' +
+        '<input type="range" class="prog-range" id="progPopRange" min="0" max="100" step="5" value="' + v0 + '" style="--p:' + (v0 / 100) + '" aria-label="Andamento em porcentagem">' +
+        '<div class="prog-quick">' + [0, 25, 50, 75, 100].map(function (v) {
+          return '<button type="button" data-v="' + v + '"' + (v0 === v ? ' class="on"' : '') + '>' + v + '%</button>';
+        }).join('') + '</div>';
+    }
+    progPop.classList.toggle('pp-multi', multi);
     progPop.hidden = false;
     var r = anchor.getBoundingClientRect();
     var pw = progPop.offsetWidth, ph = progPop.offsetHeight;
@@ -3814,21 +3881,29 @@
     if (top + ph > window.innerHeight - 8) top = Math.max(8, r.top - ph - 6);
     progPop.style.left = left + 'px';
     progPop.style.top = top + 'px';
-    $('#progPopRange').focus();
+    var f = $('#progPopRange') || $('.pp-row input', progPop); if (f) f.focus({ preventScroll: true });
   }
-  function setProgress(v) {
+  function setProgress(v, t) {
     if (!progCtx) return;
-    var p = byId(state.projects, progCtx.id);
-    if (!p) return;
     v = Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
-    if (p.progress === v) return;
-    p.progress = v;
-    progCtx.changed = true;
-    $('#progPopNum').textContent = v + '%';
-    $('#progPopRange').value = v; paintRange($('#progPopRange'));
+    t = t || progCtx.t;
+    if (progCtx.form) {
+      formDprog[t] = v;
+      renderDisc();
+      $('#progPopNum').textContent = v + '%';
+    } else {
+      var p = byId(state.projects, progCtx.id);
+      if (!p) return;
+      if (t) { if (p.dprog[t] === v) return; p.dprog[t] = v; p.progress = calcProg(p.typeIds, p.dprog); }
+      else { if (p.progress === v) return; p.progress = v; }
+      progCtx.changed = true;
+      $('#progPopNum').textContent = p.progress + '%';
+      var pn = t ? $('[data-pn="' + t + '"]', progPop) : null; if (pn) pn.textContent = v + '%';
+      if (document.body.contains(progCtx.anchor) && progCtx.anchor.classList.contains('c-prog')) progCtx.anchor.innerHTML = progHTML(p.progress);
+      save();
+    }
+    var rg = $('#progPopRange'); if (rg) { rg.value = v; paintRange(rg); }
     $$('.prog-quick button', progPop).forEach(function (b) { b.classList.toggle('on', Number(b.dataset.v) === v); });
-    if (document.body.contains(progCtx.anchor)) progCtx.anchor.innerHTML = progHTML(v);
-    save();
   }
   function closeProgPop() {
     if (!progCtx) return;
@@ -3837,7 +3912,10 @@
     progCtx = null;
     if (changed) refreshData();
   }
-  progPop.addEventListener('input', function (e) { if (e.target.id === 'progPopRange') setProgress(e.target.value); });
+  progPop.addEventListener('input', function (e) {
+    if (e.target.id === 'progPopRange') setProgress(e.target.value);
+    else if (e.target.dataset.pt) { paintRange(e.target); setProgress(e.target.value, e.target.dataset.pt); }
+  });
   progPop.addEventListener('click', function (e) {
     var b = e.target.closest('[data-v]');
     if (b) { setProgress(b.dataset.v); closeProgPop(); }
@@ -4011,8 +4089,41 @@
   var downOnBackdrop = false;
 
   var discSel = [], discOpen = false;
+  var formDprog = {};
+  function renderFormProg() {
+    var on = discSel.length > 0, rg = $('#f-progress-range'), nb = $('#f-progress');
+    rg.disabled = on; nb.disabled = on;
+    $('#progField').hidden = on;
+    var box = $('#dprogList');
+    box.hidden = !on;
+    $('#progGeral').hidden = !on;
+    if (!on) { box.innerHTML = ''; return; }
+    var ids = state.types.map(function (t) { return t.id; }).filter(function (id) { return discSel.indexOf(id) >= 0; });
+    ids.forEach(function (t) { if (formDprog[t] === undefined) formDprog[t] = 0; });
+    var v = calcProg(ids, formDprog);
+    rg.value = v; nb.value = v;
+    $('#progGeral').textContent = v + '%';
+    box.innerHTML = ids.map(function (t) {
+      var ty = byId(state.types, t), x = Number(formDprog[t]) || 0;
+      return '<div class="pp-row"><span class="pp-name"><span class="dot" style="background:' + esc(ty.color) + '"></span>' + esc(ty.name) + '</span>' +
+        '<input type="range" class="prog-range" data-fpt="' + esc(t) + '" min="0" max="100" step="5" value="' + x + '" style="--p:' + (x / 100) + '" aria-label="Andamento de ' + esc(ty.name) + '">' +
+        '<b data-fpn="' + esc(t) + '">' + x + '%</b></div>';
+    }).join('');
+  }
+  document.addEventListener('input', function (e) {
+    var t = e.target.dataset && e.target.dataset.fpt;
+    if (!t) return;
+    var v = Math.max(0, Math.min(100, Math.round(Number(e.target.value) || 0)));
+    formDprog[t] = v;
+    paintRange(e.target);
+    $('[data-fpn="' + t + '"]').textContent = v + '%';
+    var g = calcProg(discSel, formDprog);
+    $('#progGeral').textContent = g + '%';
+    $('#f-progress').value = g; $('#f-progress-range').value = g;
+  });
   function renderDisc() {
     var chosen = state.types.filter(function (t) { return discSel.indexOf(t.id) >= 0; });
+    chosen.forEach(function (t) { if (formDprog[t.id] === undefined) formDprog[t.id] = 0; });
     var chips = chosen.length ? chosen.map(function (t) {
       return '<span class="chip"><span class="dot" style="background:' + esc(t.color) + ';margin-left:6px"></span>' + esc(t.name) +
         '<button type="button" data-rmdisc="' + esc(t.id) + '" aria-label="Remover ' + esc(t.name) + '">×</button></span>';
@@ -4024,6 +4135,7 @@
     fType.classList.toggle('open', discOpen);
     fType.innerHTML = '<div class="multi-trigger" tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="' + discOpen + '">' +
       chips + '<span class="caret">▾</span></div>' + (discOpen ? '<div class="multi-panel" role="listbox">' + list + '</div>' : '');
+    renderFormProg();
   }
   fType.addEventListener('click', function (e) {
     var rm = e.target.closest('[data-rmdisc]');
@@ -4661,6 +4773,7 @@
     var firstStatus = state.statuses[0] ? state.statuses[0].id : '';
     var midPriority = state.priorities.length ? state.priorities[Math.floor(state.priorities.length / 2)].id : '';
     discSel = p ? p.typeIds.slice() : []; discOpen = false;
+    formDprog = p ? Object.assign({}, p.dprog) : {};
     renderDisc();
     fillSelect(fStatus, state.statuses, p ? p.statusId : (preset.statusId !== undefined ? preset.statusId : firstStatus), 'Sem status');
     var startStatus = fStatus.value;
@@ -4685,6 +4798,7 @@
   }
 
   function closeModal() {
+    if (progCtx && progCtx.form) closeProgPop();
     var wasId = editingId;
     modalEl.hidden = true;
     if (wasId) markSeen(wasId);
@@ -4721,6 +4835,10 @@
       notes: fNotes.value.trim(),
       progress: Math.max(0, Math.min(100, Math.round(Number($('#f-progress').value) || 0)))
     };
+    data.dprog = {};
+    data.typeIds.forEach(function (t) { data.dprog[t] = Number(formDprog[t]) || 0; });
+    if (data.typeIds.length) data.progress = calcProg(data.typeIds, data.dprog);
+    else if (p && !p.typeIds.length) { /* sem disciplinas: vale o que foi digitado */ }
     var p = editingId ? byId(state.projects, editingId) : null;
     var nowDone = isDoneStatus(data.statusId);
     if (p) {
@@ -4757,7 +4875,7 @@
   });
   fStatus.addEventListener('change', function () {
     if (clearsPriority(fStatus.value)) fPriority.value = noPriorityId();
-    if (isDoneStatus(fStatus.value)) { $('#f-progress').value = 100; $('#f-progress-range').value = 100; paintRange($('#f-progress-range')); }
+    if (isDoneStatus(fStatus.value)) { discSel.forEach(function (t) { formDprog[t] = 100; }); renderFormProg(); $('#f-progress').value = 100; $('#f-progress-range').value = 100; paintRange($('#f-progress-range')); }
     updateSendConfBtn();
   });
   /* Salva a ficha como está (inclusive o conferente escolhido) já com o status de conferência.
@@ -4847,7 +4965,7 @@
     if (ui.respOpen && !respBox.contains(t)) { ui.respOpen = false; renderResp(); }
     if (discOpen && !fType.contains(t)) { discOpen = false; renderDisc(); }
     if (popCtx && !colorPop.contains(t) && !popCtx.anchor.contains(t)) closePop();
-    if (progCtx && !progPop.contains(t) && !progCtx.anchor.contains(t)) closeProgPop();
+    if (progCtx && !progPop.contains(t) && !progCtx.anchor.contains(t) && !(progCtx.form && t.closest && t.closest('[data-dprog]'))) closeProgPop();
     if (prioCtx && !prioPop.contains(t) && !prioCtx.anchor.contains(t)) closePrioPop();
   });
   document.addEventListener('keydown', function (e) {
@@ -5357,6 +5475,11 @@
       if (ck) { p.checker = ck.dataset.mqChecker; mineSendConf(p); return; }
       var b = e.target.closest('[data-mq]'); if (!b) return;
       var a = b.dataset.mq;
+      if ((a === 'p+10' || a === 'p-10') && p.typeIds.length) {
+        if (progCtx && progCtx.id === p.id) { closeProgPop(); return; }
+        openProgPop(row.querySelector('.mr-prog') || b, p.id);
+        return;
+      }
       if (a === 'p+10' || a === 'p-10') {
         p.progress = Math.max(0, Math.min(100, Math.round((p.progress + (a === 'p+10' ? 10 : -10)) / 5) * 5));
         mineDone(p, p.progress === 100 ? 'Chegou a 100%. Já pode enviar para conferência.' : '');
@@ -5619,9 +5742,10 @@
   }
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.24.2';
+  var APP_VERSION = '2.25.0';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.25.0', d: '12/11/2026', items: ['Andamento por disciplina: cada disciplina tem a sua porcentagem, com uma barra para cada uma no Andamento da ficha.', 'O andamento geral é a média das disciplinas. No Quadro, clicar no andamento mostra cada disciplina; passar o mouse mostra o resumo.'] },
     { v: '2.24.2', d: '12/11/2026', items: ['O botão Ordem de serviço na ficha só aparece nos projetos que estão Em revisão.'] },
     { v: '2.24.1', d: '12/11/2026', items: ['OS: nome do projeto e responsáveis usam a linha inteira; conferente e emitida por ficam embaixo, lado a lado.', 'Rótulos no plural quando tem mais de um (Responsáveis, Disciplinas).'] },
     { v: '2.24.0', d: '12/11/2026', items: ['OS: botão Baixar PDF, que baixa o arquivo direto (ex.: OS 372-003 - PRÉDIO.pdf). O botão Imprimir continua para quem quiser o PDF pela impressão.'] },
