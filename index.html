@@ -5548,11 +5548,13 @@
       var data = isNaN(d) ? '' : pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear();
       var discs = o.typeIds.map(function (id) { return nameIn(state.types, id, ''); }).filter(Boolean).join(', ') || '-';
       var chk = o.checker ? whoFull(o.checker) : '';
+      var nDisc = o.typeIds.filter(function (id) { return byId(state.types, id); }).length;
+      var resp = p.responsibles.map(whoFull);
       return '<div class="page"><div class="head"><h1>ORDEM DE SERVIÇO</h1>' +
         '<div class="num"><b>O.S. Nº:</b> ' + esc(osCode(p, o.n)) + '<br><b>Data de abertura:</b> ' + data + '</div></div>' +
-        sec('DADOS DO PROJETO', '<div class="grid"><div><b>Número:</b> ' + esc(sp.num || '-') + '</div><div><b>Disciplina:</b> ' + esc(discs) + '</div>' +
-          '<div><b>Projeto:</b> ' + esc((sp.title || p.name).toUpperCase()) + '</div><div></div></div>') +
-        sec('EQUIPE', '<div class="grid"><div><b>Responsável:</b> ' + esc(p.responsibles.map(whoFull).join(', ') || '-') + '</div>' +
+        sec('DADOS DO PROJETO', '<div class="grid"><div><b>Número:</b> ' + esc(sp.num || '-') + '</div><div><b>' + (nDisc > 1 ? 'Disciplinas' : 'Disciplina') + ':</b> ' + esc(discs) + '</div>' +
+          '<div class="full"><b>Projeto:</b> ' + esc((sp.title || p.name).toUpperCase()) + '</div></div>') +
+        sec('EQUIPE', '<div class="grid"><div class="full"><b>' + (resp.length > 1 ? 'Responsáveis' : 'Responsável') + ':</b> ' + esc(resp.join(', ') || '-') + '</div>' +
           '<div><b>Conferente:</b> ' + esc(chk || '-') + '</div><div><b>Emitida por:</b> ' + esc(o.by ? whoFull(o.by) : '-') + '</div></div>') +
         sec('MOTIVO DA REVISÃO', '<div class="txt" data-f="reason">' + esc(o.reason) + '</div>') +
         sec('SERVIÇO A EXECUTAR', '<div class="txt" data-f="service">' + esc(o.service) + '</div>') +
@@ -5574,7 +5576,7 @@
       '.num{background:#e8eef8;border-left:4px solid #e8784a;padding:10px 16px;font-size:13.5px;line-height:1.8}.num b{font-weight:700}' +
       'section{border:1px solid #cfd4db;background:rgba(255,255,255,.92);padding:10px 16px 12px;margin-bottom:12px;break-inside:avoid}' +
       'h2{text-align:center;font-size:13.5px;margin:2px 0 10px;letter-spacing:.3px;color:#1e4f9c}' +
-      '.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:13.5px}.grid b,.txt b{font-weight:700}' +
+      '.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:13.5px}.grid .full{grid-column:1/-1}.grid b,.txt b{font-weight:700}' +
       '.txt{font-size:13.5px;line-height:1.55;min-height:40px;white-space:pre-wrap}' +
       '.bar .ed{display:none}.editing .bar .ed{display:inline-block}.editing .bar .nm{display:none}' +
       '.editing [data-f]{outline:2px dashed #e8784a;outline-offset:3px;background:#fff8f3;cursor:text}' +
@@ -5617,9 +5619,10 @@
   }
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.24.0';
+  var APP_VERSION = '2.24.1';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.24.1', d: '12/11/2026', items: ['OS: nome do projeto e responsáveis usam a linha inteira; conferente e emitida por ficam embaixo, lado a lado.', 'Rótulos no plural quando tem mais de um (Responsáveis, Disciplinas).'] },
     { v: '2.24.0', d: '12/11/2026', items: ['OS: botão Baixar PDF, que baixa o arquivo direto (ex.: OS 372-003 - PRÉDIO.pdf). O botão Imprimir continua para quem quiser o PDF pela impressão.'] },
     { v: '2.23.0', d: '12/11/2026', items: ['OS: botão Abrir todas, que junta as ordens do projeto numa página só (uma por folha) para exportar um PDF único.', 'Número da OS agora é o número do projeto e a ordem dele: 372-001, 372-002...'] },
     { v: '2.22.1', d: '12/11/2026', items: ['OS: na lista de ordens já emitidas, cada uma tem os botões editar (✎) e excluir (✕).', 'A OS não mostra mais a descrição do projeto; ficou só o botão Exportar PDF.'] },
