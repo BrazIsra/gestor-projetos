@@ -216,8 +216,16 @@
   }
   .talk-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; border-radius: 10px; background: var(--primary-soft); }
   .talk-actions .t { flex: 1; min-width: 180px; font-size: 13px; font-weight: 600; }
-  .talk .btn.btn-ok, .modal-foot .btn.btn-ok { background: #22a06b; border-color: #22a06b; color: #fff; }
-  .talk .btn.btn-ok:hover, .modal-foot .btn.btn-ok:hover { filter: brightness(1.05); background: #22a06b; }
+  .talk .btn.btn-ok { background: #22a06b; border-color: #22a06b; color: #fff; }
+  .talk .btn.btn-ok:hover { filter: brightness(1.05); background: #22a06b; }
+  /* no rodapé da ficha o Salvar é o botão principal; conferência fica discreta */
+  .chk-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: center; }
+  .chk-row select { min-width: 0; }
+  .chk-row .btn { justify-self: start; }
+  .chk-row .btn.btn-ok { background: transparent; border: 1px solid #22a06b; color: #22a06b; white-space: nowrap; }
+  .chk-row .btn.btn-ok:hover { background: rgba(34,160,107,.12); }
+  form:has(#sendConfBtn) .modal-foot .btn-primary { background: #22a06b; border-color: #22a06b; }
+  form:has(#sendConfBtn) .modal-foot .btn-primary:hover { background: #1c8a5c; border-color: #1c8a5c; }
   .ret-form { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; }
   .ret-form textarea { min-height: 80px; }
   .ret-form .row2 { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -1301,9 +1309,9 @@
         <span class="label">Responsáveis</span>
         <div class="multi" id="f-resp"></div>
       </div>
-      <div class="field">
+      <div class="field full">
         <label for="f-checker">Conferente</label>
-        <select id="f-checker"></select>
+        <div class="chk-row"><select id="f-checker"></select><button type="button" class="btn btn-ok" id="sendConfBtn" hidden>Enviar para conferência</button></div>
       </div>
       <div class="field full" style="display:none"><!-- Observações saiu: o texto antigo foi juntado à descrição -->
         <label for="f-notes">Observações</label>
@@ -1316,7 +1324,6 @@
       <button type="button" class="btn btn-danger" id="deleteBtn">Excluir</button>
       <div class="spacer"></div>
       <button type="button" class="btn" id="osBtn" hidden>Ordem de serviço</button>
-      <button type="button" class="btn btn-ok" id="sendConfBtn" hidden>Enviar para conferência</button>
       <button type="button" class="btn" data-close>Cancelar</button>
       <button type="submit" class="btn btn-primary">Salvar</button>
     </div>
@@ -5851,9 +5858,10 @@
   }
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '3.1.0';
+  var APP_VERSION = '3.1.1';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '3.1.1', d: '12/11/2026', items: ['Na ficha do projeto o Salvar ficou verde e é o botão de destaque. O Enviar para conferência foi para o lado do campo Conferente.'] },
     { v: '3.1.0', d: '12/11/2026', items: ['Ctrl+Z desfaz e Ctrl+Y (ou Ctrl+Shift+Z) refaz as suas últimas mudanças nesta aba (até 30). Dentro de campos de texto continua desfazendo a digitação.'] },
     { v: '3.0.0', d: '12/11/2026', items: ['Ordem de serviço: emitida quando o projeto vai para Em revisão, na folha timbrada da SteinCorp, com Baixar PDF, Imprimir, editar, excluir e Abrir todas. Número da OS = número do projeto + ordem (ex.: 372-001).', 'Andamento por disciplina: cada disciplina tem a sua porcentagem e o andamento geral é a média delas.', 'Usuários com nome completo (aparece só na OS; no resto do gestor fica o primeiro nome).', 'Quadro: disciplinas abreviadas com 3 letras quando ocupam muitas linhas; rodapé sempre no fim da tela.'] },
     { v: '2.25.0', d: '12/11/2026', items: ['Andamento por disciplina: cada disciplina tem a sua porcentagem, com uma barra para cada uma no Andamento da ficha.', 'O andamento geral é a média das disciplinas. No Quadro, clicar no andamento mostra cada disciplina; passar o mouse mostra o resumo.'] },
