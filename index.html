@@ -4671,7 +4671,7 @@
     renderResp();
     nameField.classList.remove('invalid');
     deleteBtn.hidden = !p;
-    $('#osBtn').hidden = !p;
+    $('#osBtn').hidden = !p || !isRevStatus(p.statusId);
     updateSendConfBtn();
     downOnBackdrop = false;
     closePop();
@@ -5619,9 +5619,10 @@
   }
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.24.1';
+  var APP_VERSION = '2.24.2';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.24.2', d: '12/11/2026', items: ['O botão Ordem de serviço na ficha só aparece nos projetos que estão Em revisão.'] },
     { v: '2.24.1', d: '12/11/2026', items: ['OS: nome do projeto e responsáveis usam a linha inteira; conferente e emitida por ficam embaixo, lado a lado.', 'Rótulos no plural quando tem mais de um (Responsáveis, Disciplinas).'] },
     { v: '2.24.0', d: '12/11/2026', items: ['OS: botão Baixar PDF, que baixa o arquivo direto (ex.: OS 372-003 - PRÉDIO.pdf). O botão Imprimir continua para quem quiser o PDF pela impressão.'] },
     { v: '2.23.0', d: '12/11/2026', items: ['OS: botão Abrir todas, que junta as ordens do projeto numa página só (uma por folha) para exportar um PDF único.', 'Número da OS agora é o número do projeto e a ordem dele: 372-001, 372-002...'] },
