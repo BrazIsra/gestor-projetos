@@ -5560,6 +5560,7 @@
         '<section class="signbox" style="border:0;background:transparent"><div class="sign"><div><b>Diogo Felipe Steinheuser</b><b>Eng. Civil CREA/SC 140926-8</b></div></div></section></div>';
     };
     var title = one ? 'OS ' + osCode(p, list[0].n) : 'Ordens de serviço';
+    var fileName = (one ? 'OS ' + osCode(p, list[0].n) : 'OS ' + (sp.num || '') + ' - todas') + ' - ' + (sp.title || p.name).toUpperCase().replace(/[\\/:*?"<>|]+/g, '') + '.pdf';
     var html = '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
       '<title>' + esc(title + ' - ' + fmtName(p.name)) + '</title><style>' +
       '*{box-sizing:border-box}body{margin:0;background:#e9edf3;font-family:Segoe UI,Calibri,Arial,sans-serif;color:#1f2937}' +
@@ -5581,11 +5582,23 @@
       '.tip{color:#fff;font:13px Segoe UI,Arial,sans-serif;align-self:center}.ed.tip{display:none}.editing .ed.tip{display:inline}' +
       '.signbox{margin-top:auto;margin-bottom:0}.sign{display:flex;justify-content:center;padding-top:80px}.sign div{width:300px;border-top:1px solid #111;text-align:center;padding-top:6px}.sign b{display:block;font-size:15px;line-height:1.35;color:#111}' +
       '@page{size:A4;margin:0}@media print{body{background:#fff}.bar{display:none}.page{margin:0;box-shadow:none}}' +
-      '</style></head><body><div class="bar"><button class="pri nm" onclick="window.print()">Exportar PDF</button>' +
+      '.bar button.sec{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.55);padding:8px 14px;font-weight:500}' +
+      '.bar button:disabled{opacity:.7;cursor:wait}' +
+      '</style></head><body><div class="bar"><button class="pri nm" id="dlBtn">Baixar PDF</button><button class="sec nm" onclick="window.print()">Imprimir</button>' +
       (one ? '<button class="nm" id="edBtn">Editar OS</button><span class="ed tip">Clique nos textos em destaque para corrigir.</span>' +
         '<button class="ed pri" id="svBtn">Salvar alterações</button><button class="ed" id="cxBtn">Cancelar</button>'
         : '<span class="tip">' + list.length + ' ordens de serviço, uma por página</span>') + '</div>' +
       list.map(page).join('') +
+      '<script>(function(){var bt=document.getElementById("dlBtn"),nm=' + JSON.stringify(fileName) + ';' +
+      'function js(u){return new Promise(function(ok,no){var s=document.createElement("script");s.src=u;s.onload=ok;s.onerror=no;document.head.appendChild(s);});}' +
+      'function lib(){if(window.html2canvas&&window.jspdf)return Promise.resolve();var c="https://cdnjs.cloudflare.com/ajax/libs/";' +
+      'return Promise.all([js(c+"html2canvas/1.4.1/html2canvas.min.js"),js(c+"jspdf/2.5.1/jspdf.umd.min.js")]);}' +
+      'bt.onclick=function(){var t=bt.textContent;bt.disabled=true;bt.textContent="Gerando PDF…";' +
+      'lib().then(function(){var pdf=new window.jspdf.jsPDF({unit:"mm",format:"a4"}),pg=[].slice.call(document.querySelectorAll(".page")),i=0;' +
+      'function next(){if(i>=pg.length){pdf.save(nm);bt.disabled=false;bt.textContent=t;return;}' +
+      'var el=pg[i];el.style.boxShadow="none";window.html2canvas(el,{scale:2,backgroundColor:"#ffffff",logging:false}).then(function(c){el.style.boxShadow="";' +
+      'if(i)pdf.addPage();pdf.addImage(c.toDataURL("image/jpeg",0.9),"JPEG",0,0,210,297);i++;next();});}next();})' +
+      '.catch(function(){bt.disabled=false;bt.textContent=t;alert("Não consegui gerar o PDF (sem internet?). Use o botão Imprimir e escolha Salvar como PDF.");});};})();<\/script>' +
       (one ? '<script>(function(){' +
       'var b=document.body,f=[].slice.call(document.querySelectorAll("[data-f]")),old={};' +
       'function ed(on){b.classList.toggle("editing",on);f.forEach(function(x){x.contentEditable=on?"plaintext-only":"false";});}' +
@@ -5604,9 +5617,10 @@
   }
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '2.23.0';
+  var APP_VERSION = '2.24.0';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '2.24.0', d: '12/11/2026', items: ['OS: botão Baixar PDF, que baixa o arquivo direto (ex.: OS 372-003 - PRÉDIO.pdf). O botão Imprimir continua para quem quiser o PDF pela impressão.'] },
     { v: '2.23.0', d: '12/11/2026', items: ['OS: botão Abrir todas, que junta as ordens do projeto numa página só (uma por folha) para exportar um PDF único.', 'Número da OS agora é o número do projeto e a ordem dele: 372-001, 372-002...'] },
     { v: '2.22.1', d: '12/11/2026', items: ['OS: na lista de ordens já emitidas, cada uma tem os botões editar (✎) e excluir (✕).', 'A OS não mostra mais a descrição do projeto; ficou só o botão Exportar PDF.'] },
     { v: '2.22.0', d: '12/11/2026', items: ['Ordem de serviço: quando o projeto vai para Em revisão, abre a janela para emitir a OS (disciplina, conferente, motivo, serviço e observações).', 'A OS abre numa página no modelo da empresa, com botão Exportar PDF. Fica guardada no projeto (botão Ordem de serviço na ficha).', 'Botão Editar OS na página da ordem de serviço, para corrigir os textos antes de exportar o PDF.', 'Configurações > Usuários: o nome do usuário pode ser o nome completo. Ele aparece completo só na OS; no resto do gestor fica só o primeiro nome.'] },
