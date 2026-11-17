@@ -1144,6 +1144,13 @@
   .mr { display: grid; grid-template-columns: minmax(220px, 2.6fr) minmax(100px, .8fr) minmax(170px, 1.3fr) minmax(190px, 1fr); align-items: center; gap: 14px; padding: 11px 16px; border-top: 1px solid var(--border); position: relative; }
   .mr:first-child { border-top: 0; }
   .mr.flash { animation: mrFlash .9s ease; }
+  .mr.has-eye { padding-left: 44px; }
+  .mr-eye { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; padding: 3px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); opacity: .55; cursor: pointer; transition: opacity .15s, background .15s; }
+  .mr-eye svg { width: 18px; height: 18px; display: block; }
+  .mr-eye:hover { opacity: 1; background: var(--hover); color: var(--text); }
+  .mr.dim > *:not(.mr-eye) { opacity: .45; }
+  .mr.dim .mr-eye { opacity: .9; }
+  .mr.dim .mr-due { color: var(--muted); font-weight: 400; }
   @keyframes mrFlash { 0% { background: var(--primary-soft); } 100% { background: transparent; } }
   .mr-name { min-width: 0; cursor: pointer; }
   .mr-name b { display: block; font-weight: 600; font-size: 14px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1627,6 +1634,7 @@
         adjustments: (Array.isArray(p.adjustments) ? p.adjustments : []).filter(function (a) { return a && a.text; }).map(function (a) {
           return { id: String(a.id || ''), text: String(a.text), by: String(a.by || ''), at: String(a.at || ''), done: !!a.done, doneBy: String(a.doneBy || ''), doneAt: String(a.doneAt || '') };
         }),
+        hiddenFor: Array.isArray(p.hiddenFor) ? p.hiddenFor.map(String) : [],
         os: (Array.isArray(p.os) ? p.os : []).filter(function (o) { return o && o.n; }).map(function (o) {
           return { n: Number(o.n) || 0, at: String(o.at || ''), by: String(o.by || ''), typeIds: Array.isArray(o.typeIds) ? o.typeIds.map(String) : [],
             checker: String(o.checker || ''), reason: String(o.reason || ''), service: String(o.service || ''), obs: String(o.obs || '') };
@@ -4788,6 +4796,7 @@
       p.adjustments = (p.adjustments || []).concat(lines.map(function (x) { return { id: uid(), text: x, by: me, at: at, done: false, doneBy: '', doneAt: '' }; }));
       skipStatusLog[p.id] = true;
       changeStatus(p, to);
+      p.hiddenFor = [];
       addComment(p, 'Devolveu com ' + lines.length + ' ajuste' + (lines.length > 1 ? 's' : '') + ':\n' + lines.map(function (x) { return '• ' + x; }).join('\n') + '\nVoltou para ' + byId(state.statuses, to).name + '.', 'sys', p.responsibles);
       syncStatusFields(p);
       talkUi.ret = false;
@@ -5520,12 +5529,17 @@
     }
     return '';
   }
+  var EYE_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.6 3.5M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M3 3l18 18"/></svg>';
+  function isHiddenFor(p, who) { return (p.hiddenFor || []).indexOf(who) >= 0; }
   function mineRow(p, kind) {
     /* disciplinas com a bolinha da cor, como no Quadro */
     var discs = p.typeIds.map(function (id) { var t = byId(state.types, id); return t ? '<i class="mr-dot" style="background:' + esc(t.color) + '"></i><span class="mr-dn" title="' + esc(t.name) + '" data-short="' + esc(shortName(t.name)) + '">' + esc(t.name) + '</span>' : ''; }).filter(Boolean).join('<i class="mr-sep"></i>');
     var sub = kind === 'check' ? esc('De ' + (p.responsibles.map(whoName).join(', ') || 'alguém')) :
       (kind === 'wait' ? esc('Com ' + whoName(p.checker) + ' para conferir') : (discs || esc(nameIn(state.statuses, p.statusId, ''))));
-    var h = '<div class="mr' + (mineUi.flash === p.id ? ' flash' : '') + (mineUi.popId === p.id ? ' open' : '') + '" data-mc="' + esc(p.id) + '">' +
+    var dim = kind === 'mine' && isHiddenFor(p, mineWho());
+    var h = '<div class="mr' + (kind === 'mine' ? ' has-eye' : '') + (dim ? ' dim' : '') + (mineUi.flash === p.id ? ' flash' : '') + (mineUi.popId === p.id ? ' open' : '') + '" data-mc="' + esc(p.id) + '">' +
+      (kind === 'mine' ? '<button type="button" class="mr-eye" data-mq="eye" title="' + (dim ? 'Voltar a mostrar normal' : 'Terminei minha parte: mandar para Minha parte concluída') + '">' + (dim ? EYE_OFF : EYE_ON) + '</button>' : '') +
       '<div class="mr-name" data-mc-open title="Abrir a ficha"><b>' + esc(fmtName(p.name)) + '</b><span>' + sub + '</span></div>' + mineDue(p);
     if (kind === 'mine') {
       h += '<button type="button" class="mr-prog" data-mq="prog" title="Clique para mudar o andamento">' +
@@ -5552,6 +5566,8 @@
     var waiting = open.filter(function (p) { return isConfStatus(p.statusId) && p.checker !== me && p.responsibles.indexOf(me) >= 0; });
     var byDue = function (a, b) { var x = a.deadline || '9999', y = b.deadline || '9999'; return x < y ? -1 : (x > y ? 1 : 0); };
     mine.sort(byDue); toCheck.sort(byDue); waiting.sort(byDue);
+    var hid = mine.filter(function (p) { return isHiddenFor(p, me); });
+    mine = mine.filter(function (p) { return !isHiddenFor(p, me); });
     /* em andamento = só os status Em andamento e Em revisão; atrasado e vence hoje separados */
     var going = mine.length;
     var late = mine.filter(function (p) { var d = daysUntil(p.deadline); return d !== null && d < 0; }).length;
@@ -5568,6 +5584,8 @@
     html += '<div class="mine-sec">Seus projetos</div><div class="mine-list">' + (mine.length ? mine.map(function (p) { return mineRow(p, 'mine'); }).join('') :
       '<div class="mine-empty">Nenhum projeto em andamento com você.</div>') + '</div>';
     if (waiting.length) html += '<div class="mine-sec">Em conferência</div><div class="mine-list">' + waiting.map(function (p) { return mineRow(p, 'wait'); }).join('') + '</div>';
+    /* projetos em que a pessoa já terminou a parte dela (olhinho): grupo próprio, no fim */
+    if (hid.length) html += '<div class="mine-sec">Minha parte concluída</div><div class="mine-list">' + hid.map(function (p) { return mineRow(p, 'mine'); }).join('') + '</div>';
     mineEl.innerHTML = html;
     fitMine();
     mineUi.flash = '';
@@ -5606,6 +5624,13 @@
       if (ck) { p.checker = ck.dataset.mqChecker; mineSendConf(p); return; }
       var b = e.target.closest('[data-mq]'); if (!b) return;
       var a = b.dataset.mq;
+      if (a === 'eye') {
+        var who = mineWho(), hf = (p.hiddenFor || []).slice(), ix = hf.indexOf(who);
+        if (ix >= 0) hf.splice(ix, 1); else hf.push(who);
+        p.hiddenFor = hf;
+        mineDone(p, ix >= 0 ? 'Voltou ao normal.' : 'Foi para Minha parte concluída. Não conta mais como atrasado ou vence hoje.');
+        return;
+      }
       if (a === 'prog') {
         if (progCtx && progCtx.id === p.id) { closeProgPop(); return; }
         openProgPop(row.querySelector('.mr-prog') || b, p.id);
@@ -5873,9 +5898,10 @@
   }
 
   /* ---------- Versão ---------- */
-  var APP_VERSION = '3.1.3';
+  var APP_VERSION = '3.2.0';
   /* Histórico de versões: acrescentar a nova versão no topo a cada lançamento */
   var CHANGELOG = [
+    { v: '3.2.0', d: '17/11/2026', items: ['Pessoal: olhinho ao lado do projeto. Quem terminou a sua parte aperta e o projeto vai para o grupo Minha parte concluída, no fim da página, apagado, sem contar como atrasado ou vence hoje. Vale em todos os aparelhos e volta ao normal se o projeto for devolvido com ajustes.'] },
     { v: '3.1.3', d: '12/11/2026', items: ['Pessoal: "Vence hoje" agora aparece em vermelho.'] },
     { v: '3.1.2', d: '12/11/2026', items: ['Pessoal: tirados os botões − e +. Clicando na barra de andamento (setinha ao lado) abre o mesmo menu do Quadro, com as disciplinas.', 'Pessoal: quando as disciplinas não cabem na linha, aparecem só as 3 letras (Arq, Con, Hid...).'] },
     { v: '3.1.1', d: '12/11/2026', items: ['Na ficha do projeto o Salvar ficou verde e é o botão de destaque. O Enviar para conferência foi para o lado do campo Conferente.'] },
